@@ -24,26 +24,9 @@ class CrystalStructure:
         self.provider = provider
 
     @staticmethod
-    def request(params: dict) -> dict:
-        access_key = os.environ.get("BOHRIUM_ACCESS_KEY")
-        query_url = os.environ.get("OPENLAM_STRUCTURE_QUERY_URL", "http://openapi.dp.tech/openapi/v1/structures/query")
-        headers = {
-            "Content-type": "application/json",
-        }
-        params["accessKey"] = access_key
-        rsp = requests.get(query_url, headers=headers, params=params)
-        if rsp.status_code != 200:
-            raise RuntimeError("Response code %s: %s" % (rsp.status_code, rsp.text))
-        res = json.loads(rsp.text)
-        if res["code"] != 0:
-            raise RuntimeError("Query error code %s: %s" % (res["code"], res["error"]["msg"]))
-        data = res["data"]
-        return data
-
-    @staticmethod
     def request_iterate(params: dict) -> dict:
         # ⚠️Warning: now we use a fixed access key for public database; in future, for private database, we will use the access key from the agent/user end
-        access_key = os.environ.get("BOHRIUM_ACCESS_KEY", "a43c365d70964ff6b22710da97b46254")
+        access_key = os.environ.get("BOHRIUM_ACCESS_KEY", "3422de8b0e7d4bd39bdf0a3a447ba362")
         query_url = os.environ.get("OPENLAM_STRUCTURE_QUERY_URL", "http://openapi.dp.tech/openapi/v1/structures/iterate")
         headers = {
             "Content-type": "application/json",
