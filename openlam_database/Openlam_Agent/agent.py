@@ -78,7 +78,7 @@ server_url = os.getenv("SERVER_URL")
 mcp_tools = CalculationMCPToolset(
     connection_params=SseServerParams(url=server_url),
     storage=HTTPS_STORAGE,
-    executor=BOHRIUM_EXECUTOR,
+    executor=LOCAL_EXECUTOR,
 )
 
 
