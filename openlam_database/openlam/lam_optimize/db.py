@@ -42,8 +42,7 @@ class CrystalStructure:
 
     @staticmethod
     def request_iterate(params: dict) -> dict:
-        # ⚠️Warning: now we use a fixed access key for public database; in future, for private database, we will use the access key from the agent/user end
-        access_key = os.environ.get("BOHRIUM_ACCESS_KEY", "a43c365d70964ff6b22710da97b46254")
+        access_key = os.environ.get("BOHRIUM_ACCESS_KEY")
         query_url = os.environ.get("OPENLAM_STRUCTURE_QUERY_URL", "http://openapi.dp.tech/openapi/v1/structures/iterate")
         headers = {
             "Content-type": "application/json",

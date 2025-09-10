@@ -13,24 +13,44 @@ nest_asyncio.apply()
 
 # Set environment variables if needed
 # Global Configuration
+# BOHRIUM_EXECUTOR = {
+#     "type": "dispatcher",
+#     "machine": {
+#         "batch_type": "Bohrium",
+#         "context_type": "Bohrium",
+#         "remote_profile": {
+#             "email": os.getenv("BOHRIUM_EMAIL"),
+#             "password": os.getenv("BOHRIUM_PASSWORD"),
+#             "program_id": int(os.getenv("BOHRIUM_PROJECT_ID")),
+#             "input_data": {
+#                 "image_name": "registry.dp.tech/dptech/dp/native/prod-19853/dpa-mcp:0.0.0",
+#                 "job_type": "container",
+#                 "platform": "ali",
+#                 "scass_type": "1 * NVIDIA V100_32g"
+#             }
+#         }
+#     }
+# }
+
 BOHRIUM_EXECUTOR = {
     "type": "dispatcher",
     "machine": {
-        "batch_type": "Bohrium",
-        "context_type": "Bohrium",
+        "batch_type": "OpenAPI",
+        "context_type": "OpenAPI",
         "remote_profile": {
-            "email": os.getenv("BOHRIUM_EMAIL"),
-            "password": os.getenv("BOHRIUM_PASSWORD"),
-            "program_id": int(os.getenv("BOHRIUM_PROJECT_ID")),
-            "input_data": {
-                "image_name": "registry.dp.tech/dptech/dp/native/prod-19853/dpa-mcp:0.0.0",
-                "job_type": "container",
-                "platform": "ali",
-                "scass_type": "1 * NVIDIA V100_32g"
-            }
+            "access_key": os.getenv("BOHRIUM_ACCESS_KEY"),
+            "project_id": int(os.getenv("BOHRIUM_PROJECT_ID")),
+            "app_key": "agent",
+            "image_address": "registry.dp.tech/dptech/dp/native/prod-19853/dpa-mcp:0.0.0",
+            "platform": "ali",
+            "machine_type": ""
         }
+    },
+    "resources": {
+        "envs": {}
     }
 }
+
 LOCAL_EXECUTOR = {
     "type": "local"
 }
@@ -58,7 +78,7 @@ server_url = os.getenv("SERVER_URL")
 mcp_tools = CalculationMCPToolset(
     connection_params=SseServerParams(url=server_url),
     storage=HTTPS_STORAGE,
-    executor=LOCAL_EXECUTOR
+    executor=BOHRIUM_EXECUTOR,
 )
 
 
