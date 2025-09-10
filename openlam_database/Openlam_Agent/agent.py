@@ -11,32 +11,58 @@ from dp.agent.adapter.adk import CalculationMCPToolset
 load_dotenv()
 nest_asyncio.apply()
 
-# === 2. Server + Auth Config ===
-SERVER_URL = os.getenv("SERVER_URL")
-
-HTTPS_STORAGE = {
-    "type": "https",
-    "plugin": {
-        "type": "bohrium",
-        "access_key": os.getenv("BOHRIUM_ACCESS_KEY"),
-        "project_id": int(os.getenv("BOHRIUM_PROJECT_ID")),
-        "app_key": "agent"
+# Set environment variables if needed
+# Global Configuration
+BOHRIUM_EXECUTOR = {
+    "type": "dispatcher",
+    "machine": {
+        "batch_type": "Bohrium",
+        "context_type": "Bohrium",
+        "remote_profile": {
+            "email": os.getenv("BOHRIUM_EMAIL"),
+            "password": os.getenv("BOHRIUM_PASSWORD"),
+            "program_id": int(os.getenv("BOHRIUM_PROJECT_ID")),
+            "input_data": {
+                "image_name": "registry.dp.tech/dptech/dp/native/prod-19853/dpa-mcp:0.0.0",
+                "job_type": "container",
+                "platform": "ali",
+                "scass_type": "1 * NVIDIA V100_32g"
+            }
+        }
     }
 }
-
 LOCAL_EXECUTOR = {
     "type": "local"
 }
+BOHRIUM_STORAGE = {
+    "type": "bohrium",
+    "username": os.getenv("BOHRIUM_EMAIL"),
+    "password": os.getenv("BOHRIUM_PASSWORD"),
+    "project_id": int(os.getenv("BOHRIUM_PROJECT_ID"))
+}
 
-# === 3. MCP Tool Connection ===
+HTTPS_STORAGE = {
+  "type": "https",
+  "plugin": {
+    "type": "bohrium",
+    "access_key": os.getenv("BOHRIUM_ACCESS_KEY"),
+    "project_id": int(os.getenv("BOHRIUM_PROJECT_ID")),
+    "app_key": "agent"
+  }
+}
+
+server_url = os.getenv("SERVER_URL")
+
+
+# Initialize MCP tools and agent
 mcp_tools = CalculationMCPToolset(
-    connection_params=SseServerParams(url=SERVER_URL),
+    connection_params=SseServerParams(url=server_url),
     storage=HTTPS_STORAGE,
     executor=LOCAL_EXECUTOR
 )
 
-# === 4. Root Agent Configuration ===
-openlam_agent = LlmAgent(
+
+root_agent = LlmAgent(
     model=LiteLlm(model="deepseek/deepseek-chat"),
     name="OpenLAM_Agent",
     description="Retrieves crystal structures from the OpenLAM database with filters for formula, energy, and submission time.",

@@ -24,7 +24,7 @@ BASE_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 # === ARG PARSING ===
 def parse_args():
     parser = argparse.ArgumentParser(description="OpenLAM MCP Server")
-    parser.add_argument('--port', type=int, default=50011, help='Server port (default: 50011)')
+    parser.add_argument('--port', type=int, default=50002, help='Server port (default: 50002)')
     parser.add_argument('--host', default='0.0.0.0', help='Server host (default: 0.0.0.0)')
     parser.add_argument('--log-level', default='INFO',
                         choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'],
@@ -33,7 +33,7 @@ def parse_args():
         return parser.parse_args()
     except SystemExit:
         class Args:
-            port = 50011
+            port = 50002
             host = '0.0.0.0'
             log_level = 'INFO'
         return Args()
@@ -42,9 +42,10 @@ def parse_args():
 Format = Literal["cif", "json"]
 
 class FetchResult(TypedDict):
-    output_dir: Path
-    cleaned_structures: List[dict]
-    n_found: int
+    output_dir: Path             # folder where results are saved
+    cleaned_structures: List[dict]  # list of cleaned structures
+    n_found: int                    # number of structures found (0 if none)
+
 
 # === MCP SERVER ===
 args = parse_args()
