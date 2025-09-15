@@ -87,10 +87,10 @@ async def fetch_bohrium_crystals(
     sort_filed_info = {"sort_filed": "crystal_ext.predicted_formation_energy", "sort_type": 1}
 
     # === Step 2: API call ===
-    user_info = get_user_info_by_ak()
+    # user_info = get_user_info_by_ak()
     headers = {
-        "X-User-Id": user_info["user_id"],
-        "X-Org-Id": user_info["org_id"],
+        "X-User-Id": x_user_id,
+        # "X-Org-Id": user_info["org_id"],
         "Content-Type": "application/json"
     }
     payload = {

@@ -15,38 +15,38 @@ load_dotenv()
 
 global DB_CORE_HOST
 global BOHRIUM_CORE_HOST
-DB_CORE_HOST="https://db-core.test.dp.tech"
-BOHRIUM_CORE_HOST="https://bohrium-core.test.dp.tech"
-# DB_CORE_HOST="https://db-core.dp.tech"
-# BOHRIUM_CORE_HOST="https://bohrium-core.dp.tech"
+# DB_CORE_HOST="https://db-core.test.dp.tech"
+# BOHRIUM_CORE_HOST="https://bohrium-core.test.dp.tech"
+DB_CORE_HOST="https://db-core.dp.tech"
+BOHRIUM_CORE_HOST="https://bohrium-core.dp.tech"
 
 
-def get_user_info_by_ak() -> dict:
-    """
-    根据ak获取用户信息
-    """
-    ak = os.getenv("BOHRIUM_ACCESS_KEY", "a43c365d70964ff6b22710da97b46254")
-    if not ak:
-        raise ValueError("BOHRIUM_ACCESS_KEY environment variable is not set")
+# def get_user_info_by_ak() -> dict:
+#     """
+#     根据ak获取用户信息
+#     """
+#     ak = os.getenv("BOHRIUM_ACCESS_KEY", "a43c365d70964ff6b22710da97b46254")
+#     if not ak:
+#         raise ValueError("BOHRIUM_ACCESS_KEY environment variable is not set")
     
-    url = f"{BOHRIUM_CORE_HOST}/api/v1/ak/get_user?accessKey={ak}"
+#     url = f"{BOHRIUM_CORE_HOST}/api/v1/ak/get_user?accessKey={ak}"
     
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-        data = response.json()
+#     try:
+#         response = requests.get(url)
+#         response.raise_for_status()
+#         data = response.json()
         
-        if data.get("code") == 0 and "data" in data:
-            return {
-                "user_id": str(data["data"]["userId"]),
-                "org_id": str(data["data"]["orgId"])
-            }
-        else:
-            raise Exception(f"API returned error: {data}")
+#         if data.get("code") == 0 and "data" in data:
+#             return {
+#                 "user_id": str(data["data"]["userId"]),
+#                 "org_id": str(data["data"]["orgId"])
+#             }
+#         else:
+#             raise Exception(f"API returned error: {data}")
             
-    except Exception as e:
-        raise Exception(f"Failed to get user info: {str(e)}")
-
+#     except Exception as e:
+#         raise Exception(f"Failed to get user info: {str(e)}")
+x_user_id = '117756'
 
 def parse_iso8601_utc(dt_str: str) -> datetime:
     """
