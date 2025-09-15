@@ -1,16 +1,17 @@
-import json
-import sys
-import os
-import hashlib
+import argparse
 import logging
-from typing import Optional, List, Dict, TypedDict, Literal
-from datetime import datetime
+import json
+import hashlib
+import os
+import sys
+from typing import List, Optional, TypedDict, Literal
 from pathlib import Path
+from datetime import datetime
 from anyio import to_thread
 import asyncio
-
 import requests
-from utils import *
+
+from dp.agent.server import CalculationMCPServer
 from dotenv import load_dotenv
 
 from utils import *
@@ -27,7 +28,7 @@ class FetchResult(TypedDict):
     n_found: int
 
 
-BASE_OUTPUT_DIR = Path("materials_data_bohrium")
+BASE_OUTPUT_DIR = Path("materials_data_bohriumpublic")
 BASE_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 
@@ -40,19 +41,25 @@ async def fetch_bohrium_crystals(
     predicted_formation_energy_range: Optional[List[str]] = None,
     band_gap_range: Optional[List[str]] = None,
     n_results: int = 10,
-    output_formats: List[Format] = ["json", "cif"]
+    output_formats: List[Format] = ["cif"]
 ) -> FetchResult:
     """
-    Fetch crystal structures from the Bohrium public database.
+    📦 Fetch crystal structures from the Bohrium public database.
 
-    Parameters
-    ----------
+    🔍 Features:
+    -----------------------------------
+    - Supports filtering by formula, elements, space group, atom count, formation energy, band gap.
+    - Saves structures in `.cif` and/or `.json` formats.
+    - Automatically creates a tagged output folder and manifest.
+
+    🧩 Arguments:
+    -----------------------------------
     formula : str, optional
         Formula keyword (fuzzy or exact depending on match_mode).
     elements : list of str, optional
-        Elements that must be contained in the material.
+        Required elements.
     match_mode : int
-        Only effective for formula / elements (0 = fuzzy, 1 = exact).
+        0 = fuzzy match, 1 = exact match (only effective with formula/elements).
     space_symbol : str, optional
         Space group symbol.
     atom_count_range : list [min,max], optional
@@ -62,13 +69,16 @@ async def fetch_bohrium_crystals(
     band_gap_range : list [min,max], optional
         Band gap range (eV).
     n_results : int
-        Max number of results to return.
-    output_formats : list of {"json","cif"}
-        File formats to save.
+        Max number of results to fetch (default: 10).
+    output_formats : list of {"cif", "json"}
+        Export formats. Default: "cif".
 
-    Returns
-    -------
-    FetchResult
+    📤 Returns:
+    -----------------------------------
+    FetchResult dict:
+        - output_dir: Path to the output folder.
+        - cleaned_structures: List of cleaned structures.
+        - n_found: Number of results.
     """
     # === Step 1: Build filters ===
     filters = {}
@@ -123,7 +133,7 @@ async def fetch_bohrium_crystals(
         return {
             "output_dir": Path(),
             "n_found": 0,
-            "cleaned_structures": []
+            "cleaned_structures": [],
         }
 
     # === Step 3: Build output folder ===
@@ -135,8 +145,7 @@ async def fetch_bohrium_crystals(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # === Step 4: Save ===
-    cleaned = await to_thread.run_sync(
-        lambda: save_structures_bohriumcrystal(
+    cleaned = await to_thread.run_sync(lambda: save_structures_bohriumcrystal(
             items=items,
             output_dir=output_dir,
             output_formats=output_formats
@@ -165,14 +174,14 @@ async def fetch_bohrium_crystals(
 
 if __name__ == "__main__":
     result = asyncio.run(fetch_bohrium_crystals(
-        formula="SiO3",
-        elements=["Na"],
-        match_mode=0,
+        formula="Fe2O3",
+        # elements=["Na"],
+        # match_mode=0,
         # space_symbol="C2/m",
         atom_count_range=["1", "100"],
         predicted_formation_energy_range=["-50", "50"],
         band_gap_range=["0", "10"],
         n_results=10,
-        output_formats=["json", "cif"],
+        # output_formats=["json", "cif"],
     ))
     print(result)

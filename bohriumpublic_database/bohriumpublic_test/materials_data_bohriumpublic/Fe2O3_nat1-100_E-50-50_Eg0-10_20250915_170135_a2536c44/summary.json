@@ -1,0 +1,23 @@
+{
+  "formula": "Fe2O3",
+  "filters": {
+    "atomCountRange": [
+      "1",
+      "100"
+    ],
+    "predicted_formation_energy_range": [
+      "-50",
+      "50"
+    ],
+    "band_gap_range": [
+      "0",
+      "10"
+    ]
+  },
+  "match_mode": 1,
+  "n_found": 4,
+  "formats": [
+    "cif"
+  ],
+  "output_dir": "materials_data_bohriumpublic/Fe2O3_nat1-100_E-50-50_Eg0-10_20250915_170135_a2536c44"
+}

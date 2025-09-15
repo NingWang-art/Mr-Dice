@@ -1,30 +1,40 @@
 import argparse
 import logging
 import json
-from typing import List, Optional, TypedDict, Literal
-from pathlib import Path
-from datetime import datetime
 import hashlib
 import os
 import sys
+from typing import List, Optional, TypedDict, Literal
+from pathlib import Path
+from datetime import datetime
 from anyio import to_thread
+import requests
 
 from dp.agent.server import CalculationMCPServer
+from dotenv import load_dotenv
+
 from utils import *
 
-# Add openlam path
-openlam_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'openlam')
-sys.path.insert(0, openlam_path)
-from lam_optimize.db import CrystalStructure
+load_dotenv()
 
-# === CONFIG ===
-BASE_OUTPUT_DIR = Path("materials_data")
+# === Output format type ===
+Format = Literal["json", "cif"]
+
+# === Result return type ===
+class FetchResult(TypedDict):
+    output_dir: Path
+    cleaned_structures: List[dict]
+    n_found: int
+
+
+BASE_OUTPUT_DIR = Path("materials_data_bohriumpublic")
 BASE_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
 
 # === ARG PARSING ===
 def parse_args():
-    parser = argparse.ArgumentParser(description="OpenLAM MCP Server")
-    parser.add_argument('--port', type=int, default=50002, help='Server port (default: 50002)')
+    parser = argparse.ArgumentParser(description="BohriumPublic MCP Server")
+    parser.add_argument('--port', type=int, default=50003, help='Server port (default: 50003)')
     parser.add_argument('--host', default='0.0.0.0', help='Server host (default: 0.0.0.0)')
     parser.add_argument('--log-level', default='INFO',
                         choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'],
@@ -33,96 +43,113 @@ def parse_args():
         return parser.parse_args()
     except SystemExit:
         class Args:
-            port = 50002
+            port = 50003
             host = '0.0.0.0'
             log_level = 'INFO'
         return Args()
 
-# === OUTPUT TYPE ===
-Format = Literal["cif", "json"]
-
-class FetchResult(TypedDict):
-    output_dir: Path             # folder where results are saved
-    cleaned_structures: List[dict]  # list of cleaned structures
-    n_found: int                    # number of structures found (0 if none)
-
-
 # === MCP SERVER ===
 args = parse_args()
 logging.basicConfig(level=args.log_level)
-mcp = CalculationMCPServer("OpenLAMServer", port=args.port, host=args.host)
+mcp = CalculationMCPServer("BohriumPublicServer", port=args.port, host=args.host)
+
 
 # === MCP TOOL ===
 @mcp.tool()
-async def fetch_openlam_structures(
+async def fetch_bohrium_crystals(
     formula: Optional[str] = None,
-    min_energy: Optional[float] = None,
-    max_energy: Optional[float] = None,
-    min_submission_time: Optional[str] = None,
-    max_submission_time: Optional[str] = None,
+    elements: Optional[List[str]] = None,
+    match_mode: int = 1,   # only effective for formula / elements
+    space_symbol: Optional[str] = None,
+    atom_count_range: Optional[List[str]] = None,
+    predicted_formation_energy_range: Optional[List[str]] = None,
+    band_gap_range: Optional[List[str]] = None,
     n_results: int = 10,
-    output_formats: List[Format] = ["json", "cif"]
+    output_formats: List[Format] = ["cif"]
 ) -> FetchResult:
     """
-    📦 Fetch crystal structures from the OpenLAM database and save them to disk.
+    📦 Fetch crystal structures from the Bohrium public database.
 
-    🔍 What this tool does:
+    🔍 Features:
     -----------------------------------
-    - Queries the OpenLAM materials database using optional filters.
-    - Supports filtering by chemical formula, energy window, and submission time.
+    - Supports filtering by formula, elements, space group, atom count, formation energy, band gap.
     - Saves structures in `.cif` and/or `.json` formats.
-    - Automatically creates a tagged output folder and writes a manifest.
+    - Automatically creates a tagged output folder and manifest.
 
     🧩 Arguments:
     -----------------------------------
     formula : str, optional
-        Chemical formula to filter structures (e.g., "Fe2O3").
-    min_energy : float, optional
-        Minimum energy value in eV.
-    max_energy : float, optional
-        Maximum energy value in eV.
-    min_submission_time : str, optional
-        Earliest submission time in ISO 8601 UTC format (e.g., "2024-01-01T00:00:00Z").
-    max_submission_time : str, optional
-        Latest submission time in ISO 8601 UTC format (e.g., "2025-01-01T00:00:00Z").
+        Formula keyword (fuzzy or exact depending on match_mode).
+    elements : list of str, optional
+        Required elements.
+    match_mode : int
+        0 = fuzzy match, 1 = exact match (only effective with formula/elements).
+    space_symbol : str, optional
+        Space group symbol.
+    atom_count_range : list [min,max], optional
+        Number of atoms range.
+    predicted_formation_energy_range : list [min,max], optional
+        Formation energy range (eV).
+    band_gap_range : list [min,max], optional
+        Band gap range (eV).
     n_results : int
-        Max number of structures to fetch (default: 10).
+        Max number of results to fetch (default: 10).
     output_formats : list of {"cif", "json"}
-        Which file formats to export for each structure. Default is both.
+        Export formats. Default: "cif".
 
     📤 Returns:
     -----------------------------------
-    FetchResult (dict) with:
+    FetchResult dict:
         - output_dir: Path to the output folder.
-        - cleaned_structures: List of cleaned structure dicts (metadata + lattice + species info).
-        - n_found: Number of structures returned.
-
-    📝 Notes:
-    -----------------------------------
-    - If no structures match, `output_dir` will be empty and `n_found=0`.
-    - All outputs are stored under `materials_data/<tag>_<timestamp>_<hash>/`.
-
-    Examples:
-    -----------------------------------
-    fetch_openlam_structures(
-        formula="LiFePO4",
-        min_energy=-50.0,
-        max_energy=10.0,
-        min_submission_time="2023-01-01T00:00:00Z",
-        output_formats=["json"]
-    )
+        - cleaned_structures: List of cleaned structures.
+        - n_found: Number of results.
     """
-    data = await to_thread.run_sync(lambda: CrystalStructure.query_by_offset(
-        formula=formula,
-        min_energy=min_energy,
-        max_energy=max_energy,
-        min_submission_time=parse_iso8601_utc(min_submission_time) if min_submission_time else None,
-        max_submission_time=parse_iso8601_utc(max_submission_time) if max_submission_time else None,
-        offset=0,
-        limit=n_results,
-    ))
+    # === Step 1: Build filters ===
+    filters = {}
+    if elements:
+        filters["elements"] = elements
+    if space_symbol:
+        filters["space_symbol"] = space_symbol
+    if atom_count_range:
+        filters["atomCountRange"] = atom_count_range
+    if predicted_formation_energy_range:
+        filters["predicted_formation_energy_range"] = predicted_formation_energy_range
+    if band_gap_range:
+        filters["band_gap_range"] = band_gap_range
 
-    items = data.get("items") or []
+    # Default sort: lowest formation energy first (most stable materials)
+    sort_filed_info = {"sort_filed": "crystal_ext.predicted_formation_energy", "sort_type": 1}
+
+    # === Step 2: API call ===
+    # user_info = get_user_info_by_ak()
+    headers = {
+        "X-User-Id": x_user_id,
+        # "X-Org-Id": user_info["org_id"],
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "material_type": "5",
+        "keyword": formula or "",
+        "positive_pole_key": filters,
+        "match_mode": match_mode if (formula or elements) else 0,
+        "sort_filed_info": sort_filed_info,
+        "size": n_results,
+        "page": 1,
+    }
+
+    try:
+        url = f"{DB_CORE_HOST}/api/v1/crystal/list"
+        response = requests.post(url, headers=headers, json=payload)
+        data = response.json()
+    except Exception as err:
+        logging.error(f"Request failed: {err}")
+        return {
+            "output_dir": Path(),
+            "n_found": 0,
+            "cleaned_structures": []
+        }
+
+    items = data.get("data", {}).get("data", [])  # follow Bohrium return schema
     n_found = len(items)
 
     if n_found == 0:
@@ -133,41 +160,33 @@ async def fetch_openlam_structures(
             "cleaned_structures": [],
         }
 
-    # Build folder name from filters
-    filter_str = f"{formula or ''}|emin={min_energy}|emax={max_energy}|tmin={min_submission_time}|tmax={max_submission_time}"
-    tag = tag_from_filters(
-        formula=formula,
-        min_energy=min_energy,
-        max_energy=max_energy,
-        min_submission_time=min_submission_time,
-        max_submission_time=max_submission_time
-    )
+    # === Step 3: Build output folder ===
+    filter_str = f"{formula or ''}|n_results={n_results}|filters={json.dumps(filters, sort_keys=True)}"
+    tag = tag_from_filters(formula=formula, elements=elements, space_symbol=space_symbol, atom_count_range=atom_count_range, predicted_formation_energy_range=predicted_formation_energy_range, band_gap_range=band_gap_range,)
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     short_hash = hashlib.sha1(filter_str.encode("utf-8")).hexdigest()[:8]
     output_dir = BASE_OUTPUT_DIR / f"{tag}_{ts}_{short_hash}"
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Save structures
-    cleaned = await to_thread.run_sync(lambda: save_structures_openlam(
-        items=items,
-        output_dir=output_dir,
-        output_formats=output_formats
-    ))
+    # === Step 4: Save ===
+    cleaned = await to_thread.run_sync(lambda: save_structures_bohriumcrystal(
+            items=items,
+            output_dir=output_dir,
+            output_formats=output_formats
+        )
+    )
 
-    # Save manifest
+    # === Step 5: Save manifest ===
     manifest = {
         "formula": formula,
-        "filters": {
-            "min_energy": min_energy,
-            "max_energy": max_energy,
-            "min_submission_time": min_submission_time,
-            "max_submission_time": max_submission_time,
-        },
+        "filters": filters,
+        "match_mode": match_mode,
         "n_found": n_found,
         "formats": output_formats,
         "output_dir": str(output_dir),
     }
-    (output_dir / "summary.json").write_text(json.dumps(manifest, indent=2))
+    with open(output_dir / "summary.json", "w", encoding="utf-8") as f:
+        json.dump(manifest, f, indent=2, ensure_ascii=False)
 
     return {
         "output_dir": output_dir,
@@ -175,7 +194,8 @@ async def fetch_openlam_structures(
         "cleaned_structures": cleaned,
     }
 
+
 # === START SERVER ===
 if __name__ == "__main__":
-    logging.info("Starting OpenLAM MCP Server...")
+    logging.info("Starting Bohrium MCP Server...")
     mcp.run(transport="sse")

@@ -65,7 +65,7 @@ async def fetch_bohrium_crystals(
     predicted_formation_energy_range: Optional[List[str]] = None,
     band_gap_range: Optional[List[str]] = None,
     n_results: int = 10,
-    output_formats: List[Format] = ["json", "cif"]
+    output_formats: List[Format] = ["cif"]
 ) -> FetchResult:
     """
     📦 Fetch crystal structures from the Bohrium public database.
@@ -95,7 +95,7 @@ async def fetch_bohrium_crystals(
     n_results : int
         Max number of results to fetch (default: 10).
     output_formats : list of {"cif", "json"}
-        Export formats. Default: both.
+        Export formats. Default: "cif".
 
     📤 Returns:
     -----------------------------------

@@ -48,6 +48,12 @@ BOHRIUM_CORE_HOST="https://bohrium-core.dp.tech"
 #         raise Exception(f"Failed to get user info: {str(e)}")
 x_user_id = '117756'
 
+CRYSTAL_DROP_ATTRS = {
+    "cif_file",
+    "come_from",
+    "material_id",
+}
+
 def parse_iso8601_utc(dt_str: str) -> datetime:
     """
     Parse an ISO 8601 UTC datetime string like '2024-01-01T00:00:00Z'.
@@ -163,7 +169,8 @@ def save_structures_bohriumcrystal(
 
         # Make a cleaned copy (remove bulky parts like CIF URL or details)
         cleaned_struct = dict(struct)
-        cleaned_struct.pop("cif_file", None)
+        for key in CRYSTAL_DROP_ATTRS:
+            cleaned_struct.pop(key, None)
         cleaned.append(cleaned_struct)
 
     return cleaned

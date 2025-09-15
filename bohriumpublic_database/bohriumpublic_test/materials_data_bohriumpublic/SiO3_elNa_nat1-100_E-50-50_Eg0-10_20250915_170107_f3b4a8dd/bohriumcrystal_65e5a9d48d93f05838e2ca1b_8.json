@@ -1,0 +1,35 @@
+{
+  "id": "65e5a9d48d93f05838e2ca1b",
+  "base_id": "8B5gRMpyuIquwFHBYlpc4FejkIzrFpB1",
+  "create_id": 0,
+  "create_email": "",
+  "create_time": 1709550032,
+  "come_from": "Materials Project-Materials",
+  "formula": "NaTi(SiO3)2",
+  "smiles": "",
+  "Energy(eV)": "",
+  "Ox phi (vs Li+/Li)": "",
+  "material_type": "5",
+  "with_formula_list": null,
+  "is_link_data": false,
+  "formula_elements": [
+    "Na",
+    "O",
+    "Si",
+    "Ti"
+  ],
+  "is_group_link_data": false,
+  "crystal_ext": {
+    "number_of_atoms": 20,
+    "symbol": "P1̅",
+    "predicted_formation_energy": "-3.099",
+    "band_gap": "0.14"
+  },
+  "positive_ext": {
+    "average_voltage": "N/A",
+    "volume_change": "N/A",
+    "energy_density": "N/A"
+  },
+  "material_id": "mp-1105550",
+  "cif_file": "https://minio.dp.tech/materials/db_analysis/conventional_material_8B5gRMpyuI.cif?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=5WB2oYLiPN8Wi9HfSwQx%2F20250915%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250915T090107Z&X-Amz-Expires=604800&X-Amz-SignedHeaders=host&X-Amz-Signature=4a6ce67d6e8e4f973ef1b4545206b198f2ef2666b80a7fe11d812a17c4e4a3e9"
+}
