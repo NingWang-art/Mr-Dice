@@ -1,0 +1,37 @@
+{
+  "id": "660625c943a86315edfb3c2c",
+  "base_id": "9v2KNYIEvRmJyIIZbI2dI7mXMqz08BtO",
+  "create_id": 0,
+  "create_email": "",
+  "create_time": 1711678919,
+  "come_from": "Materials Project-Materials",
+  "formula": "BaNaEu(SiO3)3",
+  "smiles": "",
+  "Energy(eV)": "",
+  "Ox phi (vs Li+/Li)": "",
+  "material_type": "5",
+  "with_formula_list": null,
+  "is_link_data": false,
+  "formula_elements": [
+    "Ba",
+    "Eu",
+    "Na",
+    "O",
+    "Si"
+  ],
+  "is_group_link_data": false,
+  "crystal_ext": {
+    "number_of_atoms": 60,
+    "symbol": "P2_12̅_12̅₁",
+    "predicted_formation_energy": "-3.210",
+    "band_gap": "0"
+  },
+  "positive_ext": {
+    "average_voltage": "N/A",
+    "volume_change": "N/A",
+    "energy_density": "N/A"
+  },
+  "material_id": "mp-1019735",
+  "cif_file": "https://minio.test.dp.tech/materials/db_analysis/conventional_material_9v2KNYIEvR.cif?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20250915%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250915T072651Z&X-Amz-Expires=604800&X-Amz-SignedHeaders=host&X-Amz-Signature=1f8d17bdc87b9dffda122a3fcccaf87e1bae58f14cd413ac8273c811fc10393b",
+  "detail": null
+}

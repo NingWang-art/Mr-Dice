@@ -1,15 +1,12 @@
 import json
 from pathlib import Path
-from typing import List, Optional, Literal, TypedDict
+from typing import List, Optional, Literal
 from datetime import datetime, timezone
 
+
+# === OUTPUT TYPE ===
 Format = Literal["cif", "json"]
 
-# === Result return type ===
-class FetchResult(TypedDict):
-    output_dir: Path               # Folder where results are saved
-    cleaned_structures: List[dict]  # List of cleaned structure dicts
-    n_found: int                    # Number of structures found
 
 def parse_iso8601_utc(dt_str: str) -> datetime:
     """

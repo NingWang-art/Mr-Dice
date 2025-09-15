@@ -1,0 +1,38 @@
+{
+  "id": "660624ba43a86315edf80c62",
+  "base_id": "wGBYzAgKzFcc5ZbcTt8fV5CGXSPDkaUS",
+  "create_id": 0,
+  "create_email": "",
+  "create_time": 1711678647,
+  "come_from": "Materials Project-Materials",
+  "formula": "NaCaScZn(SiO3)4",
+  "smiles": "",
+  "Energy(eV)": "",
+  "Ox phi (vs Li+/Li)": "",
+  "material_type": "5",
+  "with_formula_list": null,
+  "is_link_data": false,
+  "formula_elements": [
+    "Ca",
+    "Na",
+    "O",
+    "Sc",
+    "Si",
+    "Zn"
+  ],
+  "is_group_link_data": false,
+  "crystal_ext": {
+    "number_of_atoms": 40,
+    "symbol": "P2/c",
+    "predicted_formation_energy": "-3.173",
+    "band_gap": "4.55"
+  },
+  "positive_ext": {
+    "average_voltage": "N/A",
+    "volume_change": "N/A",
+    "energy_density": "N/A"
+  },
+  "material_id": "mp-684991",
+  "cif_file": "https://minio.test.dp.tech/materials/db_analysis/conventional_material_wGBYzAgKzF.cif?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20250915%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250915T072509Z&X-Amz-Expires=604800&X-Amz-SignedHeaders=host&X-Amz-Signature=254b0dc90e59c39d91eb36113a2494dd742112105ead7f05233d70ba906c36ea",
+  "detail": null
+}

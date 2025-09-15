@@ -15,7 +15,7 @@ from dp.agent.server import CalculationMCPServer
 from utils import *
 
 # === CONFIG ===
-BASE_OUTPUT_DIR = Path("materials_data")
+BASE_OUTPUT_DIR = Path("materials_data_optimade")
 BASE_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 MAX_RETURNED_STRUCTS = 100

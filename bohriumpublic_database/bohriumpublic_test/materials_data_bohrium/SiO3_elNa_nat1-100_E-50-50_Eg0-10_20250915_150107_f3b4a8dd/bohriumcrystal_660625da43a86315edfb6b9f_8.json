@@ -1,0 +1,36 @@
+{
+  "id": "660625da43a86315edfb6b9f",
+  "base_id": "6KJ0oSfW8CHS2Alvevf8l7d90zRtns8c",
+  "create_id": 0,
+  "create_email": "",
+  "create_time": 1711678936,
+  "come_from": "Materials Project-Materials",
+  "formula": "Na2Ca2(SiO3)3",
+  "smiles": "",
+  "Energy(eV)": "",
+  "Ox phi (vs Li+/Li)": "",
+  "material_type": "5",
+  "with_formula_list": null,
+  "is_link_data": false,
+  "formula_elements": [
+    "Ca",
+    "Na",
+    "O",
+    "Si"
+  ],
+  "is_group_link_data": false,
+  "crystal_ext": {
+    "number_of_atoms": 96,
+    "symbol": "R3m",
+    "predicted_formation_energy": "-3.118",
+    "band_gap": "4.24"
+  },
+  "positive_ext": {
+    "average_voltage": "N/A",
+    "volume_change": "N/A",
+    "energy_density": "N/A"
+  },
+  "material_id": "mp-1221449",
+  "cif_file": "https://minio.test.dp.tech/materials/db_analysis/conventional_material_6KJ0oSfW8C.cif?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20250915%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250915T070106Z&X-Amz-Expires=604800&X-Amz-SignedHeaders=host&X-Amz-Signature=7e31e466e02512782300310596347ccff35a56622cf4ec4857182d734b38ec08",
+  "detail": null
+}

@@ -1,0 +1,34 @@
+{
+  "id": "660625d243a86315edfb53e2",
+  "base_id": "hqhZ6mpN0OGP3WqRaBuqhdgooizOveY6",
+  "create_id": 0,
+  "create_email": "",
+  "create_time": 1711678928,
+  "come_from": "Materials Project-Materials",
+  "formula": "SiO2",
+  "smiles": "",
+  "Energy(eV)": "",
+  "Ox phi (vs Li+/Li)": "",
+  "material_type": "5",
+  "with_formula_list": null,
+  "is_link_data": false,
+  "formula_elements": [
+    "O",
+    "Si"
+  ],
+  "is_group_link_data": false,
+  "crystal_ext": {
+    "number_of_atoms": 96,
+    "symbol": "C2/m",
+    "predicted_formation_energy": "-2.839",
+    "band_gap": "5.35"
+  },
+  "positive_ext": {
+    "average_voltage": "N/A",
+    "volume_change": "N/A",
+    "energy_density": "N/A"
+  },
+  "material_id": "mp-558301",
+  "cif_file": "https://minio.test.dp.tech/materials/db_analysis/conventional_material_hqhZ6mpN0O.cif?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20250915%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250915T064730Z&X-Amz-Expires=604800&X-Amz-SignedHeaders=host&X-Amz-Signature=8ce4cb67ce2f245698bfe912ee9e8946a242ca59b73586de337f754bc4a52c0d",
+  "detail": null
+}

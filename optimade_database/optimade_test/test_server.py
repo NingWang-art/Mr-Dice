@@ -18,15 +18,43 @@ from utils import *
 BASE_OUTPUT_DIR = Path("materials_data")
 BASE_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
+MAX_RETURNED_STRUCTS = 100
+
+# === ARG PARSING ===
+def parse_args():
+    parser = argparse.ArgumentParser(description="OPTIMADE Materials Data MCP Server")
+    parser.add_argument('--port', type=int, default=50001, help='Server port (default: 50001)')
+    parser.add_argument('--host', default='0.0.0.0', help='Server host (default: 0.0.0.0)')
+    parser.add_argument('--log-level', default='INFO',
+                        choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'],
+                        help='Logging level (default: INFO)')
+    try:
+        return parser.parse_args()
+    except SystemExit:
+        class Args:
+            port = 50001
+            host = '0.0.0.0'
+            log_level = 'INFO'
+        return Args()
+
 
 # === RESULT TYPE (what each tool returns) ===
 Format = Literal["cif", "json"]
 
 class FetchResult(TypedDict):
-    output_dir: Path            # folder where results are saved
-    cleaned_structures: List[dict] # list of cleaned structures
+    output_dir: Path             # folder where results are saved
+    cleaned_structures: List[dict]  # list of cleaned structures
+    n_found: int                    # number of structures found (0 if none)
 
 
+# === MCP SERVER ===
+args = parse_args()
+logging.basicConfig(level=args.log_level)
+mcp = CalculationMCPServer("OptimadeServer", port=args.port, host=args.host)
+
+
+# === TOOL 1: RAW OPTIMADE FILTER ===
+@mcp.tool()
 async def fetch_structures_with_filter(
     filter: str,
     as_format: Format = "cif",
@@ -61,11 +89,13 @@ async def fetch_structures_with_filter(
     -------
     FetchResult
         output_dir: Path to the folder with saved results
+        cleaned_structures: List[dict]  # list of cleaned structures
+        n_found: int  # number of structures found (0 if none)
     """
     filt = (filter or "").strip()
     if not filt:
         logging.error("[raw] empty filter string")
-        return {"output_dir": Path(), "files": []}
+        return {"output_dir": Path(), "cleaned_structures": [], "n_found": 0}
     filt = normalize_cfr_in_filter(filt)
 
     used_providers = set(providers) if providers else DEFAULT_PROVIDERS
@@ -86,7 +116,7 @@ async def fetch_structures_with_filter(
         results = await to_thread.run_sync(lambda: client.get(filter=filt))
     except (SystemExit, Exception) as e:  # catch SystemExit too
         logging.error(f"[raw] fetch failed: {e}")
-        return {"output_dir": Path(), "files": []}
+        return {"output_dir": Path(), "cleaned_structures": [], "n_found": 0}
 
     # Timestamped folder + short hash of filter for traceability
     tag = filter_to_tag(filt)
@@ -107,15 +137,21 @@ async def fetch_structures_with_filter(
         "warnings": warns,
         "format": as_format,
         "n_results": n_results,
+        "n_found": len(cleaned_structures), 
     }
     (out_folder / "summary.json").write_text(json.dumps(manifest, indent=2))
+
+    cleaned_structures = cleaned_structures[:MAX_RETURNED_STRUCTS]
 
     return {
         "output_dir": out_folder,
         "cleaned_structures": cleaned_structures,
+        "n_found": len(cleaned_structures),
     }
 
 
+# === TOOL 2: SPACE-GROUP AWARE FETCH (provider-specific fields, parallel) ===
+@mcp.tool()
 async def fetch_structures_with_spg(
     base_filter: Optional[str],
     spg_number: int,
@@ -150,6 +186,8 @@ async def fetch_structures_with_spg(
     -------
     FetchResult
         output_dir: Path to the folder with saved results
+        cleaned_structures: List[dict]  # list of cleaned structures
+        n_found: int  # number of structures found (0 if none)
     """
     base = (base_filter or "").strip()
     base = normalize_cfr_in_filter(base)
@@ -160,7 +198,7 @@ async def fetch_structures_with_spg(
     filters = build_provider_filters(base, spg_map)
     if not filters:
         logging.warning("[spg] no provider-specific space-group clause available")
-        return {"output_dir": Path(), "files": []}
+        return {"output_dir": Path(), "cleaned_structures": [], "n_found": 0}
 
     async def _query_one(provider: str, clause: str) -> dict:
         logging.info(f"[spg] {provider}: {clause}")
@@ -205,13 +243,15 @@ async def fetch_structures_with_spg(
     all_files: List[str] = []
     all_warnings: List[str] = []
     all_providers: List[str] = []
+    all_cleaned: List[dict] = []
     for res in norm_results:
-        files, warns, providers_seen = await to_thread.run_sync(
+        files, warns, providers_seen, cleaned = await to_thread.run_sync(
             save_structures, res, out_folder, n_results, as_format == "cif"
         )
         all_files.extend(files)
         all_warnings.extend(warns)
         all_providers.extend(providers_seen)
+        all_cleaned.extend(cleaned)
 
     manifest = {
         "mode": "space_group",
@@ -224,11 +264,21 @@ async def fetch_structures_with_spg(
         "format": as_format,
         "n_results": n_results,
         "per_provider_filters": filters,
+        "n_found": len(all_cleaned),
     }
     (out_folder / "summary.json").write_text(json.dumps(manifest, indent=2))
 
-    return {"output_dir": out_folder}
+    all_cleaned = all_cleaned[:MAX_RETURNED_STRUCTS]
 
+    return {
+        "output_dir": out_folder,
+        "cleaned_structures": all_cleaned,
+        "n_found": len(all_cleaned),
+    }
+
+
+# === TOOL 3: BAND‑GAP RANGE FETCH (provider-specific fields, parallel) ===
+@mcp.tool()
 async def fetch_structures_with_bandgap(
     base_filter: Optional[str],
     min_bg: Optional[float] = None,
@@ -264,6 +314,8 @@ async def fetch_structures_with_bandgap(
     -------
     FetchResult
         output_dir: Path to the folder with saved results
+        cleaned_structures: List[dict]  # list of cleaned structures
+        n_found: int  # number of structures found (0 if none)
     """
     base = (base_filter or "").strip()
     base = normalize_cfr_in_filter(base)
@@ -275,7 +327,7 @@ async def fetch_structures_with_bandgap(
 
     if not filters:
         logging.warning("[bandgap] no provider-specific band-gap clause available")
-        return {"output_dir": Path(), "files": []}
+        return {"output_dir": Path(), "cleaned_structures": [], "n_found": 0}
 
     async def _query_one(provider: str, clause: str) -> dict:
         logging.info(f"[bandgap] {provider}: {clause}")
@@ -318,13 +370,15 @@ async def fetch_structures_with_bandgap(
     all_files: List[str] = []
     all_warnings: List[str] = []
     all_providers: List[str] = []
+    all_cleaned: List[dict] = []
     for res in norm_results:
-        files, warns, providers_seen = await to_thread.run_sync(
+        files, warns, providers_seen, cleaned = await to_thread.run_sync(
             save_structures, res, out_folder, n_results, as_format == "cif"
         )
         all_files.extend(files)
         all_warnings.extend(warns)
         all_providers.extend(providers_seen)
+        all_cleaned.extend(cleaned)
 
     manifest = {
         "mode": "band_gap",
@@ -338,57 +392,20 @@ async def fetch_structures_with_bandgap(
         "format": as_format,
         "n_results": n_results,
         "per_provider_filters": filters,
+        "n_found": len(all_cleaned),
     }
     (out_folder / "summary.json").write_text(json.dumps(manifest, indent=2))
 
-    return {"output_dir": out_folder}
+    all_cleaned = all_cleaned[:MAX_RETURNED_STRUCTS]
+
+    return {
+        "output_dir": out_folder,
+        "cleaned_structures": all_cleaned,
+        "n_found": len(all_cleaned),
+    }
 
 
-async def main():
-    """Demo function to test all three OPTIMADE functions."""
-    print("🚀 Testing OPTIMADE Database Functions")
-    print("=" * 50)
-    
-    # Test 1: fetch_structures_with_filter
-    print("\n1. Testing fetch_structures_with_filter...")
-    result1 = await fetch_structures_with_filter(
-        filter='elements HAS ANY "O"',
-        as_format="json",
-        n_results=2,
-    )
-    print(f"✅ Filter test completed. Output: {result1['output_dir']}")
-
-    # # Test 2: fetch_structures_with_spg
-    # print("\n2. Testing fetch_structures_with_spg...")
-    # try:
-    #     result2 = await fetch_structures_with_spg(
-    #         base_filter='elements HAS ANY "Si"',
-    #         spg_number=227,  # diamond cubic
-    #         as_format="cif",
-    #         n_results=2
-    #     )
-    #     print(f"✅ Space group test completed. Output: {result2['output_dir']}")
-    # except Exception as e:
-    #     print(f"❌ Space group test failed: {e}")
-    
-    # # Test 3: fetch_structures_with_bandgap
-    # print("\n3. Testing fetch_structures_with_bandgap...")
-    # try:
-    #     result3 = await fetch_structures_with_bandgap(
-    #         base_filter='elements HAS ANY "Si"',
-    #         min_bg=1.0,
-    #         max_bg=2.0,
-    #         as_format="cif",
-    #         n_results=2
-    #     )
-    #     print(f"✅ Bandgap test completed. Output: {result3['output_dir']}")
-    # except Exception as e:
-    #     print(f"❌ Bandgap test failed: {e}")
-    
-    print("\n🎉 All tests completed! Check the 'materials_data' directory for results.")
-
-# 'chemical_formula_reduced IN ["O2Si","Al2O3"]'
-
-
+# === RUN MCP SERVER ===
 if __name__ == "__main__":
-    asyncio.run(main())
+    logging.info("Starting Optimade MCP Server…")
+    mcp.run(transport="sse")

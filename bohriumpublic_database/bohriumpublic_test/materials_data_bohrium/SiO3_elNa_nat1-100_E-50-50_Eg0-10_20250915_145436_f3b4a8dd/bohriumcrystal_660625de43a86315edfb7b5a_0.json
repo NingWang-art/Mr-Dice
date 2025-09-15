@@ -1,0 +1,37 @@
+{
+  "id": "660625de43a86315edfb7b5a",
+  "base_id": "6JPBSIrY14JpcvhWq65PlD99gjNO3V7P",
+  "create_id": 0,
+  "create_email": "",
+  "create_time": 1711678936,
+  "come_from": "Materials Project-Materials",
+  "formula": "BaNaNd(SiO3)3",
+  "smiles": "",
+  "Energy(eV)": "",
+  "Ox phi (vs Li+/Li)": "",
+  "material_type": "5",
+  "with_formula_list": null,
+  "is_link_data": false,
+  "formula_elements": [
+    "Ba",
+    "Na",
+    "Nd",
+    "O",
+    "Si"
+  ],
+  "is_group_link_data": false,
+  "crystal_ext": {
+    "number_of_atoms": 60,
+    "symbol": "P2_12̅_12̅₁",
+    "predicted_formation_energy": "-3.337",
+    "band_gap": "4.74"
+  },
+  "positive_ext": {
+    "average_voltage": "N/A",
+    "volume_change": "N/A",
+    "energy_density": "N/A"
+  },
+  "material_id": "mp-13791",
+  "cif_file": "https://minio.test.dp.tech/materials/db_analysis/conventional_material_6JPBSIrY14.cif?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20250915%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250915T065436Z&X-Amz-Expires=604800&X-Amz-SignedHeaders=host&X-Amz-Signature=09854939c4968b1033baa5094b64c38c808f39cbe14816e3a2e5ff7b17402ac7",
+  "detail": null
+}

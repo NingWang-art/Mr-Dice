@@ -1,0 +1,36 @@
+{
+  "id": "660625b443a86315edfb023b",
+  "base_id": "K4a51lcHF1OtmLH6COaCB2wha07bWb1i",
+  "create_id": 0,
+  "create_email": "",
+  "create_time": 1711678894,
+  "come_from": "Materials Project-Materials",
+  "formula": "NaSc(SiO3)2",
+  "smiles": "",
+  "Energy(eV)": "",
+  "Ox phi (vs Li+/Li)": "",
+  "material_type": "5",
+  "with_formula_list": null,
+  "is_link_data": false,
+  "formula_elements": [
+    "Na",
+    "O",
+    "Sc",
+    "Si"
+  ],
+  "is_group_link_data": false,
+  "crystal_ext": {
+    "number_of_atoms": 40,
+    "symbol": "C2/c",
+    "predicted_formation_energy": "-3.315",
+    "band_gap": "4.95"
+  },
+  "positive_ext": {
+    "average_voltage": "N/A",
+    "volume_change": "N/A",
+    "energy_density": "N/A"
+  },
+  "material_id": "mp-7074",
+  "cif_file": "https://minio.test.dp.tech/materials/db_analysis/conventional_material_K4a51lcHF1.cif?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20250915%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250915T072713Z&X-Amz-Expires=604800&X-Amz-SignedHeaders=host&X-Amz-Signature=c68115adcd3730383464f60f84c8fdcacdd701ae1cdc0c9134c6d0af5c41a491",
+  "detail": null
+}

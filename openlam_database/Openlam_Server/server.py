@@ -18,7 +18,7 @@ sys.path.insert(0, openlam_path)
 from lam_optimize.db import CrystalStructure
 
 # === CONFIG ===
-BASE_OUTPUT_DIR = Path("materials_data")
+BASE_OUTPUT_DIR = Path("materials_data_openlam")
 BASE_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # === ARG PARSING ===
