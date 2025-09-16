@@ -185,14 +185,14 @@ async def fetch_bohrium_crystals(
 
 if __name__ == "__main__":
     result = asyncio.run(fetch_bohrium_crystals(
-        formula="Cu",
+        # formula="Cu",
         # elements=["Na"],
         # match_mode=0,
-        spacegroup_number=260,
+        spacegroup_number=194,
         # atom_count_range=["1", "100"],
         # predicted_formation_energy_range=["-50", "50"],
-        # band_gap_range=["0", "10"],
-        n_results=10,
+        band_gap_range=["1", "5"],
+        n_results=3,
         # output_formats=["json", "cif"],
     ))
     print(result)

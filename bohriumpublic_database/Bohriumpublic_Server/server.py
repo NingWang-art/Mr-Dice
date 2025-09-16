@@ -60,7 +60,7 @@ async def fetch_bohrium_crystals(
     formula: Optional[str] = None,
     elements: Optional[List[str]] = None,
     match_mode: int = 1,   # only effective for formula / elements
-    space_symbol: Optional[str] = None,
+    spacegroup_number: Optional[int] = None, 
     atom_count_range: Optional[List[str]] = None,
     predicted_formation_energy_range: Optional[List[str]] = None,
     band_gap_range: Optional[List[str]] = None,
@@ -108,8 +108,12 @@ async def fetch_bohrium_crystals(
     filters = {}
     if elements:
         filters["elements"] = elements
-    if space_symbol:
-        filters["space_symbol"] = space_symbol
+    if spacegroup_number:
+        sg_symbol = SPACEGROUP_UNICODE.get(int(spacegroup_number))
+        if sg_symbol:
+            filters["space_symbol"] = sg_symbol
+        else:
+            logging.warning(f"Unknown space group number: {spacegroup_number}")
     if atom_count_range:
         filters["atomCountRange"] = atom_count_range
     if predicted_formation_energy_range:
@@ -162,7 +166,14 @@ async def fetch_bohrium_crystals(
 
     # === Step 3: Build output folder ===
     filter_str = f"{formula or ''}|n_results={n_results}|filters={json.dumps(filters, sort_keys=True)}"
-    tag = tag_from_filters(formula=formula, elements=elements, space_symbol=space_symbol, atom_count_range=atom_count_range, predicted_formation_energy_range=predicted_formation_energy_range, band_gap_range=band_gap_range,)
+    tag = tag_from_filters(
+        formula=formula,
+        elements=elements,
+        spacegroup_number=spacegroup_number,
+        atom_count_range=atom_count_range,
+        predicted_formation_energy_range=predicted_formation_energy_range,
+        band_gap_range=band_gap_range,
+    )
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     short_hash = hashlib.sha1(filter_str.encode("utf-8")).hexdigest()[:8]
     output_dir = BASE_OUTPUT_DIR / f"{tag}_{ts}_{short_hash}"

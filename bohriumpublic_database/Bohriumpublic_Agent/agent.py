@@ -75,19 +75,16 @@ root_agent = LlmAgent(
         "• output_formats (list of 'json' or 'cif')\n\n"
 
         "=== EXAMPLES ===\n"
-        "1) 查找 Na-SiO3 结构：\n"
+        "1) 查找含有Na和SiO3的结构：\n"
         "   → Tool: fetch_bohrium_crystals\n"
         "     formula: 'SiO3'\n"
         "     elements: ['Na']\n"
         "     match_mode: 0\n"
-        "     atom_count_range: ['1','100']\n"
-        "     output_formats: ['json','cif']\n\n"
 
-        "2) 查找带隙在 1–5 eV 的结构：\n"
+        "2) 查找三个带隙在 1–5 eV 的bcc的结构：\n"
         "   → Tool: fetch_bohrium_crystals\n"
         "     band_gap_range: ['1','5']\n"
-        "     n_results: 5\n"
-        "     output_formats: ['json']\n\n"
+        "     n_results: 3\n"
 
         "=== OUTPUT ===\n"
         "- The tool returns:\n"
