@@ -3,7 +3,7 @@ import time
 import logging
 import json
 from pathlib import Path
-from typing import List, Dict, Iterable, Optional
+from typing import List, Dict, Iterable, Optional, Any, Tuple
 from pymatgen.core import Composition, Structure
 from pymatgen.symmetry.groups import SpaceGroup
 
@@ -194,10 +194,169 @@ def shorten_id(orig_id: str, head: int = 6, tail: int = 3, min_len: int = 12) ->
         return f"{orig_id[:head]}...{orig_id[-tail:]}"
     return orig_id
 
-def save_structures(results: Dict, output_folder: Path, max_results: int, as_cif: bool):
+
+def normalize_and_collect(results_list: List[Any]) -> Tuple[List[dict], Dict[str, Dict[str, int]]]:
     """
-    Walk OPTIMADE aggregated results and write per-provider files.
-    Returns files list, warnings list, providers_seen list.
+    Normalize results from asyncio.gather and collect stats.
+    """
+    norm_results: List[dict] = []
+    stats: Dict[str, Dict[str, int]] = {}
+
+    for r in results_list:
+        if isinstance(r, Exception):
+            logging.error(f"[spg] task returned exception: {r}")
+            norm_results.append({"structures": {}})
+            continue
+
+        norm_results.append(r)
+
+        if "structures" in r:
+            for clause, url_dict in r["structures"].items():
+                for url, payload in url_dict.items():
+                    n_data = len(payload.get("data", []))
+                    stats.setdefault(clause, {})[url] = n_data
+
+    return norm_results, stats
+
+
+def distribute_quota_fair(stats: Dict[str, Dict[str, int]], n_results: int) -> Dict[str, Dict[str, int]]:
+    """
+    Strict fairness:
+      1) Equalize across *active* clauses (providers) first (off by at most 1), respecting clause capacities.
+      2) Inside each clause, distribute its clause-quota fairly across URLs (equal + water-fill), respecting URL caps.
+      3) If some clauses can't absorb their fair share, *water-fill across clauses* to equalize totals,
+         and for each unit given to a clause, assign it round-robin across that clause's residual URLs.
+    - Preserves insertion order of `stats` (providers, then URLs).
+    """
+    if not stats or n_results <= 0:
+        return {}
+
+    clauses = list(stats.keys())
+    # Clause capacities (sum of URL caps)
+    clause_caps = {c: sum(stats[c].values()) for c in clauses}
+    active_clauses = [c for c in clauses if clause_caps[c] > 0]
+    plan: Dict[str, Dict[str, int]] = {c: {u: 0 for u in stats[c].keys()} for c in clauses}
+
+    if not active_clauses:
+        return plan
+
+    # --- Step 1: initial equal targets across active clauses (base + remainder), capped by clause capacity
+    n_active = len(active_clauses)
+    base_clause = n_results // n_active
+    rem_clause  = n_results %  n_active
+
+    clause_targets = {c: 0 for c in clauses}
+    for idx, c in enumerate(active_clauses):
+        want = base_clause + (1 if idx < rem_clause else 0)
+        clause_targets[c] = min(clause_caps[c], want)
+
+    # --- Step 2: inside each clause, allocate its target across URLs fairly (equal + intra-clause water-fill)
+    totals = {c: 0 for c in clauses}  # current assigned per clause
+    for c in active_clauses:
+        quota_c = clause_targets[c]
+        if quota_c <= 0:
+            continue
+
+        urls = list(stats[c].keys())
+        caps = [stats[c][u] for u in urls]
+        n_urls = len(urls)
+
+        # equal split
+        base_url = quota_c // n_urls
+        rem_url  = quota_c %  n_urls
+
+        assigned = [0] * n_urls
+        for ui, u in enumerate(urls):
+            want = base_url + (1 if ui < rem_url else 0)
+            give = min(want, caps[ui])
+            assigned[ui] = give
+
+        # intra-clause water-fill to reach quota_c if some URLs had headroom
+        assigned_sum = sum(assigned)
+        left = max(0, quota_c - assigned_sum)
+        if left > 0:
+            residuals = [caps[i] - assigned[i] for i in range(n_urls)]
+            ui = 0
+            while left > 0 and any(r > 0 for r in residuals):
+                if residuals[ui] > 0:
+                    assigned[ui] += 1
+                    residuals[ui] -= 1
+                    left -= 1
+                ui = (ui + 1) % n_urls
+
+        # write back
+        for ui, u in enumerate(urls):
+            plan[c][u] = assigned[ui]
+        totals[c] = sum(assigned)
+
+    # --- Step 3: clause-level water-filling (equalize across providers), then per-clause URL RR
+    remaining = n_results - sum(totals.values())
+    if remaining <= 0:
+        return plan
+
+    # per-clause URL residual lists + round-robin pointer
+    residual_urls: Dict[str, List[List]] = {}
+    next_url_idx: Dict[str, int] = {}
+    for c in active_clauses:
+        lst = []
+        for u in stats[c].keys():
+            res = stats[c][u] - plan[c][u]
+            if res > 0:
+                lst.append([u, res])  # [url, residual]
+        if lst:
+            residual_urls[c] = lst
+            next_url_idx[c] = 0
+
+    # helper: one unit to clause c → assign to next residual URL in that clause (RR)
+    def give_one_to_clause(c: str) -> bool:
+        urls = residual_urls.get(c)
+        if not urls:
+            return False
+        idx = next_url_idx[c] % len(urls)
+        u, r = urls[idx]
+        plan[c][u] += 1
+        totals[c] += 1
+        r -= 1
+        if r == 0:
+            urls.pop(idx)
+            next_url_idx[c] = 0 if not urls else (idx % len(urls))
+            if not urls:
+                residual_urls.pop(c, None)
+        else:
+            urls[idx][1] = r
+            next_url_idx[c] = (idx + 1) % len(urls)
+        return True
+
+    # clause-level water-filling: always raise clauses with the current minimum total first
+    while remaining > 0 and residual_urls:
+        # among clauses that still have residual URLs, find current minimal total
+        candidates = [c for c in active_clauses if c in residual_urls]
+        if not candidates:
+            break
+        min_total = min(totals[c] for c in candidates)
+
+        progressed = False
+        for c in active_clauses:  # preserve insertion order
+            if remaining == 0:
+                break
+            if c not in residual_urls:
+                continue
+            if totals[c] == min_total:
+                if give_one_to_clause(c):
+                    remaining -= 1
+                    progressed = True
+
+        if not progressed:
+            # no clause at min_total could accept more (capacity bound) → stop
+            break
+
+    return plan
+
+
+def save_structures(results: Dict, output_folder: Path, as_cif: bool, plan: Dict[str, Dict[str, int]]):
+    """
+    Walk OPTIMADE aggregated results and write per-provider files using per-URL quotas from `plan`.
+    Returns files list, warnings list, providers_seen list, cleaned_structures list.
     """
     output_folder.mkdir(parents=True, exist_ok=True)
     files: List[str] = []
@@ -208,69 +367,90 @@ def save_structures(results: Dict, output_folder: Path, max_results: int, as_cif
     seen_ids: set[str] = set()
 
     structures_by_filter = results.get("structures", {})
-    structures_by_url = list(structures_by_filter.values())[0]
-    for provider_url, content in structures_by_url.items():
-        provider_name = _provider_name_from_url(provider_url)
-        providers_seen.append(provider_name)
-        data_list = content.get("data", [])
-        logging.info(f"[save] {provider_name}: {len(data_list)} candidates")
+    if not isinstance(structures_by_filter, dict):
+        return files, warnings, providers_seen, cleaned_structures
 
-        saved = 0
-        for structure_data in data_list:
-            if saved >= max_results:
-                break
+    # iterate ALL clauses
+    for clause, structures_by_url in structures_by_filter.items():
+        if not isinstance(structures_by_url, dict):
+            continue
 
-            orig_id = str(structure_data.get("id", ""))
-            if orig_id in seen_ids:
-                logging.warning(f"[save] duplicate skipped: {orig_id}")
+        for provider_url, content in structures_by_url.items():
+            # per-URL quota from plan
+            quota = int(plan.get(clause, {}).get(provider_url, 0))
+            if quota <= 0:
                 continue
-            seen_ids.add(orig_id)
 
-            # ---------- file write ----------
-            suffix = "cif" if as_cif else "json"
-            filename = f"{provider_name}_{orig_id}_{saved}.{suffix}"
-            file_path = output_folder / filename
+            provider_name = _provider_name_from_url(provider_url)
+            providers_seen.append(provider_name)
 
-            try:
-                if as_cif:
-                    cif_content = Structure(
-                        lattice=structure_data['attributes']['lattice_vectors'], 
-                        species=structure_data['attributes']['species_at_sites'], 
-                        coords=structure_data['attributes']['cartesian_site_positions'], 
-                        coords_are_cartesian=True,
-                    ).to(fmt='cif')
-                    if not cif_content or not cif_content.strip():
-                        raise ValueError("CIF content is empty")
-                    file_path.write_text(cif_content)
-                else:
-                    file_path.write_text(json.dumps(structure_data, indent=2))
+            data_list = (content or {}).get("data", []) or []
+            logging.info(f"[save] {provider_name}: {len(data_list)} candidates, quota={quota}")
 
-                logging.debug(f"[save] wrote {file_path}")
-                files.append(str(file_path))
-            except Exception as e:
-                msg = f"Failed to save structure from {provider_name} #{orig_id}: {e}"
-                logging.warning(msg)
-                warnings.append(msg)
+            saved = 0
+            for structure_data in data_list:
+                if saved >= quota:
+                    break
 
-            # ---------- cleaned copy ----------
-            try:
-                sd = dict(structure_data)
-                attrs = dict(sd.get("attributes", {}) or {})
-                for k in DROP_ATTRS:
-                    attrs.pop(k, None)
-                sd["attributes"] = attrs
-                sd["provider_url"] = provider_url
-                # # overwrite id with short display form (first 6 + '...' + last 3)
-                # orig_id = str(sd.get("id", ""))
-                # sd["id"] = shorten_id(orig_id, head=6, tail=3, min_len=12)
+                orig_id = str(structure_data.get("id", ""))
+                if not orig_id:
+                    logging.warning(f"[save] missing id for {provider_name}; skipping")
+                    continue
+                if orig_id in seen_ids:
+                    logging.debug(f"[save] duplicate skipped: {orig_id}")
+                    continue
 
-                cleaned_structures.append(sd)
-                
-            except Exception as e:
-                logging.warning(f"[save] clean-copy failed for {provider_name} #{orig_id}: {e}")
+                # ---------- file write ----------
+                suffix = "cif" if as_cif else "json"
+                filename = f"{provider_name}_{orig_id}_{saved}.{suffix}"
+                file_path = output_folder / filename
 
-            saved += 1
+                try:
+                    if as_cif:
+                        cif_content = Structure(
+                            lattice=structure_data['attributes']['lattice_vectors'],
+                            species=structure_data['attributes']['species_at_sites'],
+                            coords=structure_data['attributes']['cartesian_site_positions'],
+                            coords_are_cartesian=True,
+                        ).to(fmt='cif')
+                        if not cif_content or not cif_content.strip():
+                            raise ValueError("CIF content is empty")
+                        file_path.write_text(cif_content)
+                    else:
+                        file_path.write_text(json.dumps(structure_data, indent=2, ensure_ascii=False))
 
+                    logging.debug(f"[save] wrote {file_path}")
+                    files.append(str(file_path))
+                except Exception as e:
+                    msg = f"Failed to save structure from {provider_name} #{orig_id}: {e}"
+                    logging.warning(msg)
+                    warnings.append(msg)
+                    # don't mark seen; let another url try this id
+                    continue
+
+                # ---------- cleaned copy ----------
+                try:
+                    sd = dict(structure_data)
+                    attrs = dict(sd.get("attributes", {}) or {})
+                    for k in DROP_ATTRS:
+                        attrs.pop(k, None)
+                    sd["attributes"] = attrs
+                    sd["provider_url"] = provider_url   # keep as you had it
+                    cleaned_structures.append(sd)
+                except Exception as e:
+                    logging.warning(f"[save] clean-copy failed for {provider_name} #{orig_id}: {e}")
+
+                # only after successful write:
+                seen_ids.add(orig_id)
+                saved += 1
+
+            if saved < quota:
+                warnings.append(
+                    f"[save] underfilled quota for {provider_name} @ {provider_url}: wanted {quota}, saved {saved}"
+                )
+
+    # de-dup providers_seen preserving order
+    providers_seen = list(dict.fromkeys(providers_seen))
     return files, warnings, providers_seen, cleaned_structures
 
 

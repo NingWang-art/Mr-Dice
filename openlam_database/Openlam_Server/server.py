@@ -61,7 +61,7 @@ async def fetch_openlam_structures(
     min_submission_time: Optional[str] = None,
     max_submission_time: Optional[str] = None,
     n_results: int = 10,
-    output_formats: List[Format] = ["json", "cif"]
+    output_formats: List[Format] = ["cif"]
 ) -> FetchResult:
     """
     📦 Fetch crystal structures from the OpenLAM database and save them to disk.
@@ -88,7 +88,7 @@ async def fetch_openlam_structures(
     n_results : int
         Max number of structures to fetch (default: 10).
     output_formats : list of {"cif", "json"}
-        Which file formats to export for each structure. Default is both.
+        Which file formats to export for each structure. Default is .cif.
 
     📤 Returns:
     -----------------------------------
@@ -109,7 +109,7 @@ async def fetch_openlam_structures(
         min_energy=-50.0,
         max_energy=10.0,
         min_submission_time="2023-01-01T00:00:00Z",
-        output_formats=["json"]
+        output_formats=["json", "cif"]
     )
     """
     data = await to_thread.run_sync(lambda: CrystalStructure.query_by_offset(
