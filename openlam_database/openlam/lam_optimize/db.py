@@ -9,36 +9,24 @@ from pymatgen.core import Structure
 
 
 class CrystalStructure:
+    id: int
     formula: str
     structure: Structure
     energy: float
     submission_time: datetime
-    def __init__(self, formula: str, structure: Structure, energy: float, submission_time: datetime):
+    provider: str
+    def __init__(self, id: int, formula: str, structure: Structure, energy: float, submission_time: datetime, provider: str):
+        self.id = id
         self.formula = formula
         self.structure = structure
         self.energy = energy
         self.submission_time = submission_time
-
-    @staticmethod
-    def request(params: dict) -> dict:
-        access_key = os.environ.get("BOHRIUM_ACCESS_KEY")
-        query_url = os.environ.get("OPENLAM_STRUCTURE_QUERY_URL", "http://openapi.dp.tech/openapi/v1/structures/query")
-        headers = {
-            "Content-type": "application/json",
-        }
-        params["accessKey"] = access_key
-        rsp = requests.get(query_url, headers=headers, params=params)
-        if rsp.status_code != 200:
-            raise RuntimeError("Response code %s: %s" % (rsp.status_code, rsp.text))
-        res = json.loads(rsp.text)
-        if res["code"] != 0:
-            raise RuntimeError("Query error code %s: %s" % (res["code"], res["error"]["msg"]))
-        data = res["data"]
-        return data
+        self.provider = provider
 
     @staticmethod
     def request_iterate(params: dict) -> dict:
-        access_key = os.environ.get("BOHRIUM_ACCESS_KEY")
+        # ⚠️Warning: now we use a fixed access key for public database; in future, for private database, we will use the access key from the agent/user end
+        access_key = os.environ.get("BOHRIUM_ACCESS_KEY", "242af226b70d4e0f9ef03ed28bfec095")
         query_url = os.environ.get("OPENLAM_STRUCTURE_QUERY_URL", "http://openapi.dp.tech/openapi/v1/structures/iterate")
         headers = {
             "Content-type": "application/json",
@@ -51,42 +39,6 @@ class CrystalStructure:
         if res["code"] != 0:
             raise RuntimeError("Query error code %s: %s" % (res["code"], res["error"]["msg"]))
         data = res["data"]
-        return data
-
-    @classmethod
-    def query_by_page(
-        cls,
-        formula: Optional[str] = None,
-        min_energy: Optional[float] = None,
-        max_energy: Optional[float] = None,
-        min_submission_time: Optional[datetime] = None,
-        max_submission_time: Optional[datetime] = None,
-        page: int = 1,
-    ) -> dict:
-        logging.warn("The method `query_by_page` is deprecated! Please use `query_by_offset` instead.")
-        params = {
-            "page": page,
-        }
-        if formula is not None:
-            params["formula"] = formula
-        if min_energy is not None:
-            params["minEnergy"] = min_energy
-        if max_energy is not None:
-            params["maxEnergy"] = max_energy
-        if min_submission_time is not None:
-            params["minSubmissionTime"] = min_submission_time.isoformat()
-        if max_submission_time is not None:
-            params["maxSubmissionTime"] = max_submission_time.isoformat()
-
-        data = cls.request(params)
-        structures = []
-        for item in data["items"]:
-            structure = cls(formula=item["formula"],
-                            structure=Structure.from_dict(json.loads(item["structure"])),
-                            energy=item["energy"],
-                            submission_time=datetime.fromisoformat(item["submissionTime"]))
-            structures.append(structure)
-        data["items"] = structures
         return data
 
     @classmethod
@@ -119,10 +71,12 @@ class CrystalStructure:
         if data["items"] is not None:
             structures = []
             for item in data["items"]:
-                structure = cls(formula=item["formula"],
+                structure = cls(id=item["id"], formula=item["formula"],
                                 structure=Structure.from_dict(json.loads(item["structure"])),
                                 energy=item["energy"],
-                                submission_time=datetime.fromisoformat(item["submissionTime"]))
+                                submission_time=datetime.fromisoformat(item["submissionTime"]),
+                                provider='openlam',
+                                )
                 structures.append(structure)
             data["items"] = structures
         return data
