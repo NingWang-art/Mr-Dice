@@ -1,5 +1,7 @@
 #!/bin/bash
 
+ORIG_DIR=$(pwd)
+
 # Go to home directory
 cd ~
 
@@ -13,3 +15,5 @@ export https_proxy='http://ga.dp.tech:8118'
 # Activate conda environment
 source /root/.bashrc  # Adjust path if needed
 conda activate optimade
+
+cd $ORIG_DIR

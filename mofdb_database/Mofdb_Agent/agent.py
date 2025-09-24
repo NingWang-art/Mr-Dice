@@ -59,21 +59,30 @@ root_agent = LlmAgent(
         "• output_formats (list of 'json' or 'cif')\n\n"
 
         "=== EXAMPLES ===\n"
-        "1) 查找 Tobacco 数据库中的某个 MOF：\n"
+        "1) 我想查 tobmof-27\n"
         "   → Tool: fetch_mofs\n"
         "     name: 'tobmof-27'\n"
-        "     database: 'Tobacco'\n"
-        "     n_results: 3\n"
-        "     output_formats: ['cif']\n\n"
+        "     database: 'Tobacco'\n\n"
 
-        "2) 查找比表面积 500–1000 m²/g 且 LCD 在 6–8 Å 之间的 MOF：\n"
+        "2) 我想要比表面积 500–1000 m²/g 且 LCD 在 6–8 Å 之间的 MOF：\n"
         "   → Tool: fetch_mofs\n"
         "     sa_m2g_min: 500\n"
         "     sa_m2g_max: 1000\n"
         "     lcd_min: 6.0\n"
         "     lcd_max: 8.0\n"
-        "     n_results: 10\n"
-        "     output_formats: ['json']\n\n"
+
+        "3) 我有一个 MOFid：[O-]C(=O)c1cc(F)c(c(c1F)F)C(=O)[O-].[O-]C(=O)c1cc(F)c(cc1F)C(=O)[O-].[O-]C(=O)c1ccc(c(c1)F)C(=O)[O-].[Zn][O]([Zn])([Zn])[Zn] MOFid-v1.pcu.cat1，能帮我查一下吗？\n"
+        "   → Tool: fetch_mofs\n"
+        "     mofid: '[O-]C(=O)c1cc(F)c(c(c1F)F)C(=O)[O-].[O-]C(=O)c1cc(F)c(cc1F)C(=O)[O-].[O-]C(=O)c1ccc(c(c1)F)C(=O)[O-].[Zn][O]([Zn])([Zn])[Zn] MOFid-v1.pcu.cat1'\n"
+
+        "4) 我知道一个 MOFkey：Cu.QMKYBPDZANOJGF.MOFkey-v1.tbo，帮我找一下对应的结构：\n"
+        "   → Tool: fetch_mofs\n"
+        "     mofkey: 'Cu.QMKYBPDZANOJGF.MOFkey-v1.tbo'\n"
+
+        "5) 我想查找名叫 ABAYIO_clean 的 MOF, 并给我全部信息\n"
+        "   → Tool: fetch_mofs\n"
+        "     name: 'ABAYIO_clean'\n"
+        "     output_formats: ['cif','json']\n\n"
 
         "=== OUTPUT ===\n"
         "- The tool returns:\n"
