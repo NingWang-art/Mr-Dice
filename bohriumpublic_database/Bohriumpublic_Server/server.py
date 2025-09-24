@@ -30,6 +30,7 @@ class FetchResult(TypedDict):
 BASE_OUTPUT_DIR = Path("materials_data_bohriumpublic")
 BASE_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
+MAX_RETURNED_STRUCTS = 30
 
 # === ARG PARSING ===
 def parse_args():
@@ -154,7 +155,6 @@ async def fetch_bohrium_crystals(
         }
 
     items = data.get("data", {}).get("data", [])  # follow Bohrium return schema
-    n_found = len(items)
 
     # === Step 3: Build output folder ===
     filter_str = f"{formula or ''}|n_results={n_results}|filters={json.dumps(filters, sort_keys=True)}"
@@ -179,11 +179,15 @@ async def fetch_bohrium_crystals(
         )
     )
 
+    cleaned = cleaned[:MAX_RETURNED_STRUCTS]
+    n_found = len(cleaned)
+
     # === Step 5: Save manifest ===
     manifest = {
         "formula": formula,
         "filters": filters,
         "match_mode": match_mode,
+        "n_results": n_results,
         "n_found": n_found,
         "formats": output_formats,
         "output_dir": str(output_dir),

@@ -45,6 +45,8 @@ class FetchResult(TypedDict):
 BASE_OUTPUT_DIR = Path("materials_data_mofdb")
 BASE_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
+MAX_RETURNED_STRUCTS = 30
+
 # === MCP SERVER ===
 args = parse_args()
 logging.basicConfig(level=args.log_level)
@@ -104,8 +106,7 @@ async def fetch_mofs(
         )))
     except Exception as e:
         print(f"Encounter some error or Find nothing!")
-        results = []
-    n_found = len(results)
+        results = []    
 
     # === Step 2: Build output folder ===
     filter_str = json.dumps({
@@ -139,6 +140,9 @@ async def fetch_mofs(
         output_dir,
         output_formats
     ))
+
+    cleaned = cleaned[:MAX_RETURNED_STRUCTS]
+    n_found = len(cleaned)
 
     # === Step 4: Manifest ===
     manifest = {

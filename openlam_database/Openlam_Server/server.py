@@ -21,6 +21,8 @@ from lam_optimize.db import CrystalStructure
 BASE_OUTPUT_DIR = Path("materials_data_openlam")
 BASE_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
+MAX_RETURNED_STRUCTS = 30
+
 # === ARG PARSING ===
 def parse_args():
     parser = argparse.ArgumentParser(description="OpenLAM MCP Server")
@@ -123,7 +125,6 @@ async def fetch_openlam_structures(
     ))
 
     items = data.get("items") or []
-    n_found = len(items)
 
     # Build folder name from filters
     filter_str = f"{formula or ''}|emin={min_energy}|emax={max_energy}|tmin={min_submission_time}|tmax={max_submission_time}"
@@ -146,9 +147,13 @@ async def fetch_openlam_structures(
         output_formats=output_formats
     ))
 
+    cleaned = cleaned[:MAX_RETURNED_STRUCTS]
+    n_found = len(cleaned)
+
     # Save manifest
     manifest = {
         "formula": formula,
+        "n_results": n_results,
         "filters": {
             "min_energy": min_energy,
             "max_energy": max_energy,
