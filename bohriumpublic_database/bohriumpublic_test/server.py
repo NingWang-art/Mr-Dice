@@ -156,14 +156,6 @@ async def fetch_bohrium_crystals(
     items = data.get("data", {}).get("data", [])  # follow Bohrium return schema
     n_found = len(items)
 
-    if n_found == 0:
-        logging.warning("No structures found.")
-        return {
-            "output_dir": Path(),
-            "n_found": 0,
-            "cleaned_structures": [],
-        }
-
     # === Step 3: Build output folder ===
     filter_str = f"{formula or ''}|n_results={n_results}|filters={json.dumps(filters, sort_keys=True)}"
     tag = tag_from_filters(

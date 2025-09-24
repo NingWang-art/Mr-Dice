@@ -1,0 +1,25 @@
+{
+  "filters": {
+    "mofid": "Cl[Mn].N1=NC(=N[N]1)C1=N[N]C(=N[N]1)C#Cc1nnc(nn1)",
+    "mofkey": null,
+    "name": null,
+    "database": null,
+    "vf_min": null,
+    "vf_max": null,
+    "lcd_min": null,
+    "lcd_max": null,
+    "pld_min": null,
+    "pld_max": null,
+    "sa_m2g_min": null,
+    "sa_m2g_max": null,
+    "sa_m2cm3_min": null,
+    "sa_m2cm3_max": null,
+    "n_results": 50
+  },
+  "n_found": 0,
+  "formats": [
+    "json",
+    "cif"
+  ],
+  "output_dir": "materials_data_mofdb/idCl[Mn].N_20250924_094426_aba57e2a"
+}

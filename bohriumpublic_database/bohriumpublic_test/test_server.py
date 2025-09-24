@@ -132,14 +132,6 @@ async def fetch_bohrium_crystals(
     items = data.get("data", {}).get("data", [])  # follow Bohrium return schema
     n_found = len(items)
 
-    if n_found == 0:
-        logging.warning("No structures found.")
-        return {
-            "output_dir": Path(),
-            "n_found": 0,
-            "cleaned_structures": [],
-        }
-
     # === Step 3: Build output folder ===
     filter_str = f"{formula or ''}|n_results={n_results}|filters={json.dumps(filters, sort_keys=True)}"
     tag = tag_from_filters(
@@ -185,13 +177,13 @@ async def fetch_bohrium_crystals(
 
 if __name__ == "__main__":
     result = asyncio.run(fetch_bohrium_crystals(
-        # formula="Cu",
+        formula="SiO2",
         # elements=["Na"],
         # match_mode=0,
-        spacegroup_number=194,
+        spacegroup_number=154,
         # atom_count_range=["1", "100"],
         # predicted_formation_energy_range=["-50", "50"],
-        band_gap_range=["1", "5"],
+        # band_gap_range=["1", "5"],
         n_results=3,
         # output_formats=["json", "cif"],
     ))

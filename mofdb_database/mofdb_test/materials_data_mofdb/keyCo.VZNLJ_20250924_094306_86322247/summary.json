@@ -1,0 +1,25 @@
+{
+  "filters": {
+    "mofid": null,
+    "mofkey": "Co.VZNLJUXIEJLYJK.MOFkey",
+    "name": null,
+    "database": null,
+    "vf_min": null,
+    "vf_max": null,
+    "lcd_min": null,
+    "lcd_max": null,
+    "pld_min": null,
+    "pld_max": null,
+    "sa_m2g_min": null,
+    "sa_m2g_max": null,
+    "sa_m2cm3_min": null,
+    "sa_m2cm3_max": null,
+    "n_results": 50
+  },
+  "n_found": 0,
+  "formats": [
+    "json",
+    "cif"
+  ],
+  "output_dir": "materials_data_mofdb/keyCo.VZNLJ_20250924_094306_86322247"
+}

@@ -406,7 +406,7 @@ async def main():
     print("Running fetch_structures_with_filter")
     result = await fetch_structures_with_filter(
         filter="chemical_formula_reduced=\"O2Si\"",
-        as_format="cif",
+        as_format="json",
         n_results=20,
     )
     print(result)

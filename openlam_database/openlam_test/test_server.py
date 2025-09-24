@@ -69,14 +69,6 @@ def fetch_openlam_structures(
     items = data.get("items") or []
     n_found = len(items)
 
-    if n_found == 0:
-        logging.warning("No structures found.")
-        return {
-            "output_dir": Path(),
-            "n_found": 0,
-            "cleaned_structures": [],
-        }
-
     # === Step 2: Build output folder ===
     filter_str = f"{formula or ''}|emin={min_energy}|emax={max_energy}|tmin={min_submission_time}|tmax={max_submission_time}"
     tag = tag_from_filters(
@@ -125,8 +117,8 @@ def fetch_openlam_structures(
 if __name__ == "__main__":
     result = fetch_openlam_structures(
         formula="Fe2O3",
-        min_energy=-40.0,
-        max_energy=40.0,
+        min_energy=-0.01,
+        max_energy=0.01,
         min_submission_time="2024-09-01T00:00:00Z",
         max_submission_time="2025-01-01T00:00:00Z",
         n_results=5,

@@ -1,0 +1,25 @@
+{
+  "filters": {
+    "mofid": null,
+    "mofkey": null,
+    "name": "tobmof-2769",
+    "database": null,
+    "vf_min": null,
+    "vf_max": null,
+    "lcd_min": null,
+    "lcd_max": null,
+    "pld_min": null,
+    "pld_max": null,
+    "sa_m2g_min": null,
+    "sa_m2g_max": null,
+    "sa_m2cm3_min": null,
+    "sa_m2cm3_max": null,
+    "n_results": 50
+  },
+  "n_found": 1,
+  "formats": [
+    "json",
+    "cif"
+  ],
+  "output_dir": "materials_data_mofdb/tobmof-2769_20250924_094206_b9dca179"
+}

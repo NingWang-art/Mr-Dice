@@ -121,7 +121,7 @@ def tag_from_filters(
 def save_structures_bohriumcrystal(
     items: List[dict],
     output_dir: Path,
-    output_formats: List[Literal["json", "cif"]] = ["json"]
+    output_formats: List[Literal["json", "cif"]] = ["cif"]
 ) -> List[dict]:
     """
     Save Bohrium crystal structures as JSON and/or CIF files.

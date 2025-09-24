@@ -125,14 +125,6 @@ async def fetch_openlam_structures(
     items = data.get("items") or []
     n_found = len(items)
 
-    if n_found == 0:
-        logging.warning("No structures found.")
-        return {
-            "output_dir": Path(),
-            "n_found": 0,
-            "cleaned_structures": [],
-        }
-
     # Build folder name from filters
     filter_str = f"{formula or ''}|emin={min_energy}|emax={max_energy}|tmin={min_submission_time}|tmax={max_submission_time}"
     tag = tag_from_filters(
