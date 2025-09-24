@@ -212,5 +212,6 @@ materials_data/
 materials_data_bohriumpublic/
 materials_data_optimade/
 materials_data_openlam/
+materials_data_mofdb/
 
 db-agent-tools/
