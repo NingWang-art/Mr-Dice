@@ -1,0 +1,6 @@
+INFO:root:Starting MOFdb SQL MCP Server on 0.0.0.0:50002
+INFO:root:Database path: /bohr/MOF-SQL-hfs4/v1/mof_database.db
+INFO:     Started server process [12316]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:50002 (Press CTRL+C to quit)
