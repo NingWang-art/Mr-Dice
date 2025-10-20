@@ -24,7 +24,7 @@ BASE_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 MAX_RETURNED_STRUCTS = 30
 
 # 数据库路径
-DB_PATH = '/home/MOF_SQL_test/mof_data/mof_database.db'
+DB_PATH = '/bohr/MOF-SQL-nj9w/v1/mof_database.db'
 
 def fetch_mofs(
     sql: str,
@@ -55,10 +55,15 @@ def fetch_mofs(
     
     # 使用utils中的安全检查函数
     validate_sql_security(sql)
-    
+
     # === Step 2: Process SQL Query ===
     # 自动添加 LIMIT 子句，确保与 n_results 保持一致
     processed_sql = sql.strip()
+    
+    # 移除末尾的分号，避免多语句问题
+    if processed_sql.endswith(';'):
+        processed_sql = processed_sql[:-1]
+    
     if not processed_sql.upper().endswith('LIMIT'):
         # 检查是否已经有 LIMIT 子句
         if 'LIMIT' not in processed_sql.upper():

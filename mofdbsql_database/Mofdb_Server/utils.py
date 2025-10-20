@@ -201,6 +201,10 @@ def save_mofs(
                     constructed_cif_path = f"hmof/{name}.cif"
                 elif "IZA" in database:
                     constructed_cif_path = f"iza/{name}.cif"
+                elif "Tobacco" in database:
+                    constructed_cif_path = f"tobacco/{name}.cif"
+                elif "PCOD-syn" in database:
+                    constructed_cif_path = f"pcod/{name}.cif"
             
             if constructed_cif_path:
                 full_cif_path = base_data_dir / constructed_cif_path
