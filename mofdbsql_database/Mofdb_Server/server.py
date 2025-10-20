@@ -49,7 +49,7 @@ logging.basicConfig(level=args.log_level)
 mcp = CalculationMCPServer("MOFDBSQLServer", port=args.port, host=args.host)
 
 # 数据库路径
-DB_PATH = '/bohr/MOF-SQL-nj9w/v1/mof_database.db'
+DB_PATH = '/home/MOF_SQL_test/mof_data/mof_database.db'
 
 # === MCP TOOL ===
 @mcp.tool()
