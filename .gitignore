@@ -215,3 +215,5 @@ materials_data_openlam/
 materials_data_mofdb/
 
 db-agent-tools/
+
+nohup.out

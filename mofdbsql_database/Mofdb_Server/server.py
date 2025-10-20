@@ -49,14 +49,14 @@ logging.basicConfig(level=args.log_level)
 mcp = CalculationMCPServer("MOFDBSQLServer", port=args.port, host=args.host)
 
 # 数据库路径
-DB_PATH = '/bohr/MOF-SQL-hfs4/v1/mof_database.db'
+DB_PATH = '/bohr/MOF-SQL-nj9w/v1/mof_database.db'
 
 # === MCP TOOL ===
 @mcp.tool()
 async def fetch_mofs_sql(
     sql: str,
     n_results: int = 10,
-    output_formats: List[Format] = ["cif"]
+    output_formats: List[Format] = ["cif", "json"]
 ) -> FetchResult:
     """
     🧱 Fetch MOFs from local SQLite database using SQL queries and save them to disk.
@@ -85,6 +85,11 @@ async def fetch_mofs_sql(
     
     # 自动添加 LIMIT 子句，确保与 n_results 保持一致
     processed_sql = sql.strip()
+    
+    # 移除末尾的分号，避免多语句问题
+    if processed_sql.endswith(';'):
+        processed_sql = processed_sql[:-1]
+    
     if not processed_sql.upper().endswith('LIMIT'):
         # 检查是否已经有 LIMIT 子句
         if 'LIMIT' not in processed_sql.upper():

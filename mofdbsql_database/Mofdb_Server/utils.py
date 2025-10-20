@@ -6,6 +6,9 @@ from typing import List, Literal, TypedDict, Any
 
 Format = Literal["cif", "json"]
 
+# base_data_dir = Path("/home/MOF_SQL_test/data/original")
+base_data_dir = Path("/bohr/MOF-SQL-nj9w/v1/original")
+
 MOFDB_DROP_ATTRS = {
     "cif", 
     "json_repr", 
@@ -149,7 +152,6 @@ def save_mofs(
         
         if cif_path:
             # Has cif_path: copy original files
-            base_data_dir = Path("/home/MOF_SQL_test/data/original")
             full_cif_path = base_data_dir / cif_path
             base_path = full_cif_path.parent
             base_name = full_cif_path.stem
@@ -199,9 +201,12 @@ def save_mofs(
                     constructed_cif_path = f"hmof/{name}.cif"
                 elif "IZA" in database:
                     constructed_cif_path = f"iza/{name}.cif"
+                elif "Tobacco" in database:
+                    constructed_cif_path = f"tobacco/{name}.cif"
+                elif "PCOD-syn" in database:
+                    constructed_cif_path = f"pcod/{name}.cif"
             
             if constructed_cif_path:
-                base_data_dir = Path("/home/MOF_SQL_test/data/original")
                 full_cif_path = base_data_dir / constructed_cif_path
                 
                 # Try to copy original files if they exist

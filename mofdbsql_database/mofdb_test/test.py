@@ -290,42 +290,8 @@ def test_complex_queries():
     print(f"  找到数量: {result5['n_found']}")
     print(f"  返回结构数量: {len(result5['cleaned_structures'])}")
     
-    # 测试6: 复杂窗口函数 + 条件筛选 + 排序
-    print("\n6. 复杂窗口函数 + 条件筛选 + 排序:")
-    print("用户提示词: '查找每个数据库中孔隙效率排名前10%且原子数在合理范围内的MOF，按综合评分排序。孔隙效率=比表面积×孔隙率，单位原子效率=孔隙效率/原子数，数值越大表示单位原子的孔隙利用效率越高'")
-    result6 = fetch_mofs(
-        sql='''
-        WITH efficiency_ranking AS (
-            SELECT 
-                name, database, n_atom, surface_area_m2g, void_fraction, pld, lcd,
-                (surface_area_m2g * void_fraction) as pore_efficiency,
-                ROW_NUMBER() OVER (PARTITION BY database ORDER BY (surface_area_m2g * void_fraction) DESC) as efficiency_rank,
-                COUNT(*) OVER (PARTITION BY database) as total_count,
-                AVG(n_atom) OVER (PARTITION BY database) as db_avg_atoms,
-                MIN(n_atom) OVER (PARTITION BY database) as db_min_atoms,
-                MAX(n_atom) OVER (PARTITION BY database) as db_max_atoms
-            FROM mofs 
-            WHERE surface_area_m2g IS NOT NULL AND void_fraction IS NOT NULL AND n_atom IS NOT NULL
-        )
-        SELECT 
-            name, database, n_atom, surface_area_m2g, void_fraction, pore_efficiency,
-            efficiency_rank, total_count,
-            (efficiency_rank * 100.0 / total_count) as percentile,
-            (pore_efficiency / n_atom) as efficiency_per_atom
-        FROM efficiency_ranking
-        WHERE efficiency_rank <= total_count * 0.1
-          AND n_atom BETWEEN db_min_atoms AND db_max_atoms
-        ORDER BY efficiency_per_atom DESC
-        ''',
-        n_results=10,
-        output_formats=['cif','json']
-    )
-    print(f"  输出目录: {result6['output_dir']}")
-    print(f"  找到数量: {result6['n_found']}")
-    print(f"  返回结构数量: {len(result6['cleaned_structures'])}")
-    
-    # 测试7: 复杂子查询 + 多表关联 + 条件筛选
-    print("\n7. 复杂子查询 + 多表关联 + 条件筛选:")
+    # 测试6: 复杂子查询 + 多表关联 + 条件筛选
+    print("\n6. 复杂子查询 + 多表关联 + 条件筛选:")
     print("用户提示词: '查找有多个吸附物数据的MOF，计算吸附选择性矩阵，找出选择性最强的MOF。吸附选择性矩阵=同一MOF对不同吸附物的吸附性能对比，选择性比值=最大吸附量/最小吸附量，数值越大表示对不同吸附物的分离能力越强'")
     result7 = fetch_mofs(
         sql='''
@@ -376,15 +342,14 @@ def test_complex_queries():
     print(f"  找到数量: {result7['n_found']}")
     print(f"  返回结构数量: {len(result7['cleaned_structures'])}")
     
-    print("\n=== 所有7个SQL独有复杂测试完成 ===")
+    print("\n=== 所有6个SQL独有复杂测试完成 ===")
     print("这些查询展示了SQL版本相比传统server的强大优势：")
     print("1. 多表关联分析 - 传统server无法实现")
     print("2. 复杂聚合统计 - 传统server无法实现")
     print("3. 窗口函数排名 - 传统server无法实现")
     print("4. 子查询和CTE - 传统server无法实现")
     print("5. 复杂条件筛选 - 传统server功能有限")
-    print("6. 自定义计算字段 - 传统server无法实现")
-    print("7. 递归查询分析 - 传统server无法实现")
+    print("6. 递归查询分析 - 传统server无法实现")
 
 def test_security():
     """测试安全性"""
