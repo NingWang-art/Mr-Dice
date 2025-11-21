@@ -26,6 +26,8 @@ class FetchResult(TypedDict):
     output_dir: Path
     cleaned_structures: List[dict]
     n_found: int
+    code: int
+    message: str
 
 
 BASE_OUTPUT_DIR = Path("materials_data_bohriumpublic")
@@ -126,7 +128,9 @@ async def fetch_bohrium_crystals(
         return {
             "output_dir": Path(),
             "n_found": 0,
-            "cleaned_structures": []
+            "cleaned_structures": [],
+            "code": -1,
+            "message": f"Request failed: {err}",
         }
 
     items = data.get("data", {}).get("data", [])  # follow Bohrium return schema
@@ -171,6 +175,8 @@ async def fetch_bohrium_crystals(
         "output_dir": output_dir,
         "n_found": n_found,
         "cleaned_structures": cleaned,
+        "code": 0,
+        "message": "Success",
     }
 
 

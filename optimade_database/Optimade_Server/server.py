@@ -45,6 +45,8 @@ class FetchResult(TypedDict):
     output_dir: Path             # folder where results are saved
     cleaned_structures: List[dict]  # list of cleaned structures
     n_found: int                    # number of structures found (0 if none)
+    code: int
+    message: str
 
 
 # === MCP SERVER ===
@@ -95,7 +97,7 @@ async def fetch_structures_with_filter(
     filt = (filter or "").strip()
     if not filt:
         logging.error("[raw] empty filter string")
-        return {"output_dir": Path(), "cleaned_structures": [], "n_found": 0}
+        return {"output_dir": Path(), "cleaned_structures": [], "n_found": 0, "code": -1, "message": "Empty filter string"}
     filt = normalize_cfr_in_filter(filt)
 
     used = set(providers) if providers else DEFAULT_PROVIDERS
@@ -141,14 +143,24 @@ async def fetch_structures_with_filter(
     all_providers: List[str] = []
     all_cleaned: List[dict] = []
 
-    for res in norm_results:
-        files, warns, providers_seen, cleaned = await to_thread.run_sync(
-            save_structures, res, out_folder, (as_format == "cif"), plan
-        )
-        all_files.extend(files)
-        all_warnings.extend(warns)
-        all_providers.extend(providers_seen)
-        all_cleaned.extend(cleaned)
+    try:
+        for res in norm_results:
+            files, warns, providers_seen, cleaned = await to_thread.run_sync(
+                save_structures, res, out_folder, (as_format == "cif"), plan
+            )
+            all_files.extend(files)
+            all_warnings.extend(warns)
+            all_providers.extend(providers_seen)
+            all_cleaned.extend(cleaned)
+    except Exception as e:
+        logging.error(f"[raw] 保存结构时出错: {e}")
+        return {
+            "output_dir": out_folder,
+            "cleaned_structures": [],
+            "n_found": 0,
+            "code": -1,
+            "message": f"保存结构时出错: {str(e)}",
+        }
 
     manifest = {
         "mode": "raw_filter",
@@ -166,10 +178,13 @@ async def fetch_structures_with_filter(
     (out_folder / "summary.json").write_text(json.dumps(manifest, indent=2))
 
     all_cleaned = all_cleaned[:MAX_RETURNED_STRUCTS]
+    n_found = len(all_cleaned)
     return {
         "output_dir": out_folder,
         "cleaned_structures": all_cleaned,
-        "n_found": len(all_cleaned),
+        "n_found": n_found,
+        "code": 1 if n_found == 0 else 0,
+        "message": "Success",
     }
 
 
@@ -220,8 +235,15 @@ async def fetch_structures_with_spg(
     spg_map = get_spg_filter_map(spg_number, used)
     filters = build_provider_filters(base, spg_map)
     if not filters:
-        logging.warning("[spg] no provider-specific space-group clause available")
-        return {"output_dir": Path(), "cleaned_structures": [], "n_found": 0}
+        supported_providers = sorted(list(DEFAULT_SPG_PROVIDERS))
+        if providers:
+            # User specified providers, but none support this query
+            message = f"No provider-specific space-group clause available for the specified providers. Supported providers for space-group queries: {', '.join(supported_providers)}"
+        else:
+            # No providers specified, but none of the defaults support this (shouldn't happen normally)
+            message = f"No provider-specific space-group clause available. Supported providers for space-group queries: {', '.join(supported_providers)}"
+        logging.warning(f"[spg] {message}")
+        return {"output_dir": Path(), "cleaned_structures": [], "n_found": 0, "code": -1, "message": message}
 
     async def _query_one(provider: str, clause: str) -> dict:
         logging.info(f"[spg] {provider}: {clause}")
@@ -264,14 +286,24 @@ async def fetch_structures_with_spg(
     all_warnings: List[str] = []
     all_providers: List[str] = []
     all_cleaned: List[dict] = []
-    for res in norm_results:
-        files, warns, providers_seen, cleaned = await to_thread.run_sync(
-            save_structures, res, out_folder, (as_format == "cif"), plan
-        )
-        all_files.extend(files)
-        all_warnings.extend(warns)
-        all_providers.extend(providers_seen)
-        all_cleaned.extend(cleaned)
+    try:
+        for res in norm_results:
+            files, warns, providers_seen, cleaned = await to_thread.run_sync(
+                save_structures, res, out_folder, (as_format == "cif"), plan
+            )
+            all_files.extend(files)
+            all_warnings.extend(warns)
+            all_providers.extend(providers_seen)
+            all_cleaned.extend(cleaned)
+    except Exception as e:
+        logging.error(f"[spg] 保存结构时出错: {e}")
+        return {
+            "output_dir": out_folder,
+            "cleaned_structures": [],
+            "n_found": 0,
+            "code": -1,
+            "message": f"保存结构时出错: {str(e)}",
+        }
 
     manifest = {
         "mode": "space_group",
@@ -291,11 +323,13 @@ async def fetch_structures_with_spg(
     (out_folder / "summary.json").write_text(json.dumps(manifest, indent=2))
 
     all_cleaned = all_cleaned[:MAX_RETURNED_STRUCTS]
-
+    n_found = len(all_cleaned)
     return {
         "output_dir": out_folder,
         "cleaned_structures": all_cleaned,
-        "n_found": len(all_cleaned),
+        "n_found": n_found,
+        "code": 1 if n_found == 0 else 0,
+        "message": "Success",
     }
 
 
@@ -347,8 +381,15 @@ async def fetch_structures_with_bandgap(
     bg_map = get_bandgap_filter_map(min_bg, max_bg, used)
     filters = build_provider_filters(base, bg_map)
     if not filters:
-        logging.warning("[bandgap] no provider-specific band-gap clause available")
-        return {"output_dir": Path(), "cleaned_structures": [], "n_found": 0}
+        supported_providers = sorted(list(DEFAULT_BG_PROVIDERS))
+        if providers:
+            # User specified providers, but none support this query
+            message = f"No provider-specific band-gap clause available for the specified providers. Supported providers for band-gap queries: {', '.join(supported_providers)}"
+        else:
+            # No providers specified, but none of the defaults support this
+            message = f"No provider-specific band-gap clause available. Supported providers for band-gap queries: {', '.join(supported_providers)}"
+        logging.warning(f"[bandgap] {message}")
+        return {"output_dir": Path(), "cleaned_structures": [], "n_found": 0, "code": -1, "message": message}
 
     async def _query_one(provider: str, clause: str) -> dict:
         logging.info(f"[bandgap] {provider}: {clause}")
@@ -391,14 +432,24 @@ async def fetch_structures_with_bandgap(
     all_warnings: List[str] = []
     all_providers: List[str] = []
     all_cleaned: List[dict] = []
-    for res in norm_results:
-        files, warns, providers_seen, cleaned = await to_thread.run_sync(
-            save_structures, res, out_folder, (as_format == "cif"), plan
-        )
-        all_files.extend(files)
-        all_warnings.extend(warns)
-        all_providers.extend(providers_seen)
-        all_cleaned.extend(cleaned)
+    try:
+        for res in norm_results:
+            files, warns, providers_seen, cleaned = await to_thread.run_sync(
+                save_structures, res, out_folder, (as_format == "cif"), plan
+            )
+            all_files.extend(files)
+            all_warnings.extend(warns)
+            all_providers.extend(providers_seen)
+            all_cleaned.extend(cleaned)
+    except Exception as e:
+        logging.error(f"[bandgap] 保存结构时出错: {e}")
+        return {
+            "output_dir": out_folder,
+            "cleaned_structures": [],
+            "n_found": 0,
+            "code": -1,
+            "message": f"保存结构时出错: {str(e)}",
+        }
 
     manifest = {
         "mode": "band_gap",
@@ -419,11 +470,13 @@ async def fetch_structures_with_bandgap(
     (out_folder / "summary.json").write_text(json.dumps(manifest, indent=2))
 
     all_cleaned = all_cleaned[:MAX_RETURNED_STRUCTS]
-
+    n_found = len(all_cleaned)
     return {
         "output_dir": out_folder,
         "cleaned_structures": all_cleaned,
-        "n_found": len(all_cleaned),
+        "n_found": n_found,
+        "code": 1 if n_found == 0 else 0,
+        "message": "Success",
     }
 
 

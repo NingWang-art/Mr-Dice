@@ -7,7 +7,7 @@ from typing import List, Literal, TypedDict, Any
 Format = Literal["cif", "json"]
 
 # base_data_dir = Path("/home/MOF_SQL_test/data/original")
-base_data_dir = Path("/bohr/MOF-SQL-nj9w/v1/original")
+base_data_dir = Path("/home/MOF_SQL_test/data/original")
 
 MOFDB_DROP_ATTRS = {
     "cif", 
