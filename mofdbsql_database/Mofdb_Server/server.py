@@ -37,6 +37,8 @@ class FetchResult(TypedDict):
     output_dir: Path
     cleaned_structures: List[dict]
     n_found: int
+    code: int
+    message: str
 
 BASE_OUTPUT_DIR = Path("materials_data_mofdb")
 BASE_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -78,10 +80,25 @@ async def fetch_mofs_sql(
 
     # === Step 1: SQL Security Check ===
     if not os.path.exists(DB_PATH):
-        raise FileNotFoundError(f"数据库不存在: {DB_PATH}")
+        return {
+            "output_dir": Path(),
+            "n_found": 0,
+            "cleaned_structures": [],
+            "code": -1,
+            "message": f"数据库不存在: {DB_PATH}",
+        }
     
     # 使用utils中的安全检查函数
-    validate_sql_security(sql)
+    try:
+        validate_sql_security(sql)
+    except Exception as e:
+        return {
+            "output_dir": Path(),
+            "n_found": 0,
+            "cleaned_structures": [],
+            "code": -1,
+            "message": f"SQL安全检查失败: {str(e)}",
+        }
     
     # 自动添加 LIMIT 子句，确保与 n_results 保持一致
     processed_sql = sql.strip()
@@ -112,11 +129,23 @@ async def fetch_mofs_sql(
                 results.append(dict(row))
                 
     except sqlite3.Error as e:
-        print(f"数据库查询错误: {e}")
-        results = []
+        logging.error(f"数据库查询错误: {e}")
+        return {
+            "output_dir": Path(),
+            "n_found": 0,
+            "cleaned_structures": [],
+            "code": -1,
+            "message": f"数据库查询错误: {str(e)}",
+        }
     except Exception as e:
-        print(f"查询执行错误: {e}")
-        results = []
+        logging.error(f"查询执行错误: {e}")
+        return {
+            "output_dir": Path(),
+            "n_found": 0,
+            "cleaned_structures": [],
+            "code": -1,
+            "message": f"查询执行错误: {str(e)}",
+        }
 
     n_found = len(results)
 
@@ -132,11 +161,21 @@ async def fetch_mofs_sql(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # === Step 3: Save ===
-    cleaned, warnings = await to_thread.run_sync(lambda: save_mofs(
-        results,
-        output_dir,
-        output_formats
-    ))
+    try:
+        cleaned, warnings = await to_thread.run_sync(lambda: save_mofs(
+            results,
+            output_dir,
+            output_formats
+        ))
+    except Exception as e:
+        logging.error(f"保存结构时出错: {e}")
+        return {
+            "output_dir": output_dir,
+            "n_found": 0,
+            "cleaned_structures": [],
+            "code": -1,
+            "message": f"保存结构时出错: {str(e)}",
+        }
 
     cleaned = cleaned[:MAX_RETURNED_STRUCTS]
     n_found = len(cleaned)
@@ -158,6 +197,8 @@ async def fetch_mofs_sql(
         "output_dir": output_dir,
         "n_found": n_found,
         "cleaned_structures": cleaned,
+        "code": 1 if n_found == 0 else 0,
+        "message": "Success",
     }
 
 # === START SERVER ===

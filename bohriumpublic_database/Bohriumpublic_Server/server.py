@@ -25,6 +25,8 @@ class FetchResult(TypedDict):
     output_dir: Path
     cleaned_structures: List[dict]
     n_found: int
+    code: int
+    message: str
 
 
 BASE_OUTPUT_DIR = Path("materials_data_bohriumpublic")
@@ -85,8 +87,8 @@ async def fetch_bohrium_crystals(
         Required elements.
     match_mode : int
         0 = fuzzy match, 1 = exact match (only effective with formula/elements).
-    space_symbol : str, optional
-        Space group symbol.
+    spacegroup_number : int, optional
+        Space group number.
     atom_count_range : list [min,max], optional
         Number of atoms range.
     predicted_formation_energy_range : list [min,max], optional
@@ -104,6 +106,8 @@ async def fetch_bohrium_crystals(
         - output_dir: Path to the output folder.
         - cleaned_structures: List of cleaned structures.
         - n_found: Number of results.
+        - code: 0 for success, -1 for error.
+        - message: Error message if code is -1.
     """
     # === Step 1: Build filters ===
     filters = {}
@@ -151,7 +155,9 @@ async def fetch_bohrium_crystals(
         return {
             "output_dir": Path(),
             "n_found": 0,
-            "cleaned_structures": []
+            "cleaned_structures": [],
+            "code": -1,
+            "message": f"Request failed: {err}",
         }
 
     items = data.get("data", {}).get("data", [])  # follow Bohrium return schema
@@ -199,6 +205,8 @@ async def fetch_bohrium_crystals(
         "output_dir": output_dir,
         "n_found": n_found,
         "cleaned_structures": cleaned,
+        "code": 1 if n_found == 0 else 0,
+        "message": "Success",
     }
 
 

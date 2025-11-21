@@ -47,6 +47,8 @@ class FetchResult(TypedDict):
     output_dir: Path             # folder where results are saved
     cleaned_structures: List[dict]  # list of cleaned structures
     n_found: int                    # number of structures found (0 if none)
+    code: int
+    message: str
 
 
 # === MCP SERVER ===
@@ -114,15 +116,25 @@ async def fetch_openlam_structures(
         output_formats=["json", "cif"]
     )
     """
-    data = await to_thread.run_sync(lambda: CrystalStructure.query_by_offset(
-        formula=formula,
-        min_energy=min_energy,
-        max_energy=max_energy,
-        min_submission_time=parse_iso8601_utc(min_submission_time) if min_submission_time else None,
-        max_submission_time=parse_iso8601_utc(max_submission_time) if max_submission_time else None,
-        offset=0,
-        limit=n_results,
-    ))
+    try:
+        data = await to_thread.run_sync(lambda: CrystalStructure.query_by_offset(
+            formula=formula,
+            min_energy=min_energy,
+            max_energy=max_energy,
+            min_submission_time=parse_iso8601_utc(min_submission_time) if min_submission_time else None,
+            max_submission_time=parse_iso8601_utc(max_submission_time) if max_submission_time else None,
+            offset=0,
+            limit=n_results,
+        ))
+    except Exception as e:
+        logging.error(f"查询OpenLAM数据库时出错: {e}")
+        return {
+            "output_dir": Path(),
+            "n_found": 0,
+            "cleaned_structures": [],
+            "code": -1,
+            "message": f"查询OpenLAM数据库时出错: {str(e)}",
+        }
 
     items = data.get("items") or []
 
@@ -141,11 +153,21 @@ async def fetch_openlam_structures(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Save structures
-    cleaned = await to_thread.run_sync(lambda: save_structures_openlam(
-        items=items,
-        output_dir=output_dir,
-        output_formats=output_formats
-    ))
+    try:
+        cleaned = await to_thread.run_sync(lambda: save_structures_openlam(
+            items=items,
+            output_dir=output_dir,
+            output_formats=output_formats
+        ))
+    except Exception as e:
+        logging.error(f"保存结构时出错: {e}")
+        return {
+            "output_dir": output_dir,
+            "n_found": 0,
+            "cleaned_structures": [],
+            "code": -1,
+            "message": f"保存结构时出错: {str(e)}",
+        }
 
     cleaned = cleaned[:MAX_RETURNED_STRUCTS]
     n_found = len(cleaned)
@@ -170,6 +192,8 @@ async def fetch_openlam_structures(
         "output_dir": output_dir,
         "n_found": n_found,
         "cleaned_structures": cleaned,
+        "code": 1 if n_found == 0 else 0,
+        "message": "Success",
     }
 
 # === START SERVER ===

@@ -41,6 +41,8 @@ class FetchResult(TypedDict):
     output_dir: Path
     cleaned_structures: List[dict]
     n_found: int
+    code: int
+    message: str
 
 BASE_OUTPUT_DIR = Path("materials_data_mofdb")
 BASE_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -165,6 +167,8 @@ async def fetch_mofs(
         "output_dir": output_dir,
         "n_found": n_found,
         "cleaned_structures": cleaned,
+        "code": 0,
+        "message": "Success",
     }
 
 # === START SERVER ===

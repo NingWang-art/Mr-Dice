@@ -45,6 +45,8 @@ class FetchResult(TypedDict):
     output_dir: Path             # folder where results are saved
     cleaned_structures: List[dict]  # list of cleaned structures
     n_found: int                    # number of structures found (0 if none)
+    code: int
+    message: str
 
 
 # === MCP SERVER ===
@@ -95,7 +97,7 @@ async def fetch_structures_with_filter(
     filt = (filter or "").strip()
     if not filt:
         logging.error("[raw] empty filter string")
-        return {"output_dir": Path(), "cleaned_structures": [], "n_found": 0}
+        return {"output_dir": Path(), "cleaned_structures": [], "n_found": 0, "code": -1, "message": "Empty filter string"}
     filt = normalize_cfr_in_filter(filt)
 
     used = set(providers) if providers else DEFAULT_PROVIDERS
@@ -170,6 +172,8 @@ async def fetch_structures_with_filter(
         "output_dir": out_folder,
         "cleaned_structures": all_cleaned,
         "n_found": len(all_cleaned),
+        "code": 0,
+        "message": "Success",
     }
 
 
@@ -221,7 +225,7 @@ async def fetch_structures_with_spg(
     filters = build_provider_filters(base, spg_map)
     if not filters:
         logging.warning("[spg] no provider-specific space-group clause available")
-        return {"output_dir": Path(), "cleaned_structures": [], "n_found": 0}
+        return {"output_dir": Path(), "cleaned_structures": [], "n_found": 0, "code": -1, "message": "No provider-specific space-group clause available"}
 
     async def _query_one(provider: str, clause: str) -> dict:
         logging.info(f"[spg] {provider}: {clause}")
@@ -296,6 +300,8 @@ async def fetch_structures_with_spg(
         "output_dir": out_folder,
         "cleaned_structures": all_cleaned,
         "n_found": len(all_cleaned),
+        "code": 0,
+        "message": "Success",
     }
 
 
@@ -348,7 +354,7 @@ async def fetch_structures_with_bandgap(
     filters = build_provider_filters(base, bg_map)
     if not filters:
         logging.warning("[bandgap] no provider-specific band-gap clause available")
-        return {"output_dir": Path(), "cleaned_structures": [], "n_found": 0}
+        return {"output_dir": Path(), "cleaned_structures": [], "n_found": 0, "code": -1, "message": "No provider-specific band-gap clause available"}
 
     async def _query_one(provider: str, clause: str) -> dict:
         logging.info(f"[bandgap] {provider}: {clause}")
@@ -424,6 +430,8 @@ async def fetch_structures_with_bandgap(
         "output_dir": out_folder,
         "cleaned_structures": all_cleaned,
         "n_found": len(all_cleaned),
+        "code": 0,
+        "message": "Success",
     }
 
 
