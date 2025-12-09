@@ -59,7 +59,7 @@ mcp = CalculationMCPServer("OptimadeServer", port=args.port, host=args.host)
 @mcp.tool()
 async def fetch_structures_with_filter(
     filter: str,
-    as_format: Format = "cif",
+    as_format: List[Format] = ["cif", "json"],
     n_results: int = 10,
     providers: Optional[List[str]] = None,
 ) -> FetchResult:
@@ -80,8 +80,8 @@ async def fetch_structures_with_filter(
           - chemical_formula_reduced="O2Si"
           - chemical_formula_descriptive CONTAINS "H2O"
           - (elements HAS ANY "Si") AND NOT (elements HAS ANY "H")
-    as_format : {"cif","json"}
-        Output format for saved structures (default "cif").
+    as_format : list of {"cif","json"}
+        Output format(s) for saved structures. Can be ["cif"], ["json"], or ["cif", "json"] to save both formats (default ["cif", "json"]).
     n_results : int
         Number of results to save from EACH provider (default 2).
     providers : list[str] | None
@@ -143,15 +143,25 @@ async def fetch_structures_with_filter(
     all_providers: List[str] = []
     all_cleaned: List[dict] = []
 
+    # Force both formats regardless of input
+    formats_to_save = ["cif", "json"]
+
     try:
         for res in norm_results:
-            files, warns, providers_seen, cleaned = await to_thread.run_sync(
-                save_structures, res, out_folder, (as_format == "cif"), plan
-            )
-            all_files.extend(files)
-            all_warnings.extend(warns)
-            all_providers.extend(providers_seen)
-            all_cleaned.extend(cleaned)
+            # Save in each requested format
+            for fmt in formats_to_save:
+                files, warns, providers_seen, cleaned = await to_thread.run_sync(
+                    save_structures, res, out_folder, (fmt == "cif"), plan
+                )
+                all_files.extend(files)
+                all_warnings.extend(warns)
+                all_providers.extend(providers_seen)
+                # Only add cleaned structures once (they're the same regardless of format)
+                if fmt == formats_to_save[0]:
+                    all_cleaned.extend(cleaned)
+        
+        # Deduplicate providers
+        all_providers = list(dict.fromkeys(all_providers))
     except Exception as e:
         logging.error(f"[raw] 保存结构时出错: {e}")
         return {
@@ -193,7 +203,7 @@ async def fetch_structures_with_filter(
 async def fetch_structures_with_spg(
     base_filter: Optional[str],
     spg_number: int,
-    as_format: Format = "cif",
+    as_format: List[Format] = ["cif", "json"],
     n_results: int = 10,
     providers: Optional[List[str]] = None,
 ) -> FetchResult:
@@ -213,8 +223,8 @@ async def fetch_structures_with_spg(
         Common OPTIMADE filter applied to all providers (e.g., "elements HAS ONLY \"Ti\",\"Al\"").
     spg_number : int
         International space-group number (1-230).
-    as_format : {"cif","json"}
-        Output format for saved structures (default "cif").
+    as_format : list of {"cif","json"}
+        Output format(s) for saved structures. Can be ["cif"], ["json"], or ["cif", "json"] to save both formats (default ["cif", "json"]).
     n_results : int
         Number of results to save from EACH provider (default 3).
     providers : list[str] | None
@@ -286,15 +296,26 @@ async def fetch_structures_with_spg(
     all_warnings: List[str] = []
     all_providers: List[str] = []
     all_cleaned: List[dict] = []
+    
+    # Force both formats regardless of input
+    formats_to_save = ["cif", "json"]
+    
     try:
         for res in norm_results:
-            files, warns, providers_seen, cleaned = await to_thread.run_sync(
-                save_structures, res, out_folder, (as_format == "cif"), plan
-            )
-            all_files.extend(files)
-            all_warnings.extend(warns)
-            all_providers.extend(providers_seen)
-            all_cleaned.extend(cleaned)
+            # Save in each requested format
+            for fmt in formats_to_save:
+                files, warns, providers_seen, cleaned = await to_thread.run_sync(
+                    save_structures, res, out_folder, (fmt == "cif"), plan
+                )
+                all_files.extend(files)
+                all_warnings.extend(warns)
+                all_providers.extend(providers_seen)
+                # Only add cleaned structures once (they're the same regardless of format)
+                if fmt == formats_to_save[0]:
+                    all_cleaned.extend(cleaned)
+        
+        # Deduplicate providers
+        all_providers = list(dict.fromkeys(all_providers))
     except Exception as e:
         logging.error(f"[spg] 保存结构时出错: {e}")
         return {
@@ -339,7 +360,7 @@ async def fetch_structures_with_bandgap(
     base_filter: Optional[str],
     min_bg: Optional[float] = None,
     max_bg: Optional[float] = None,
-    as_format: Format = "cif",
+    as_format: List[Format] = ["cif", "json"],
     n_results: int = 10,
     providers: Optional[List[str]] = None,
 ) -> FetchResult:
@@ -359,8 +380,8 @@ async def fetch_structures_with_bandgap(
         Common OPTIMADE filter applied to all providers (e.g., 'elements HAS ALL "Al"').
     min_bg, max_bg : float | None
         Band-gap range in eV (open-ended allowed, e.g., min only or max only).
-    as_format : {"cif","json"}
-        Output format for saved structures (default "cif").
+    as_format : list of {"cif","json"}
+        Output format(s) for saved structures. Can be ["cif"], ["json"], or ["cif", "json"] to save both formats (default ["cif", "json"]).
     n_results : int
         Number of results to save from EACH provider (default 2).
     providers : list[str] | None
@@ -432,15 +453,26 @@ async def fetch_structures_with_bandgap(
     all_warnings: List[str] = []
     all_providers: List[str] = []
     all_cleaned: List[dict] = []
+    
+    # Force both formats regardless of input
+    formats_to_save = ["cif", "json"]
+    
     try:
         for res in norm_results:
-            files, warns, providers_seen, cleaned = await to_thread.run_sync(
-                save_structures, res, out_folder, (as_format == "cif"), plan
-            )
-            all_files.extend(files)
-            all_warnings.extend(warns)
-            all_providers.extend(providers_seen)
-            all_cleaned.extend(cleaned)
+            # Save in each requested format
+            for fmt in formats_to_save:
+                files, warns, providers_seen, cleaned = await to_thread.run_sync(
+                    save_structures, res, out_folder, (fmt == "cif"), plan
+                )
+                all_files.extend(files)
+                all_warnings.extend(warns)
+                all_providers.extend(providers_seen)
+                # Only add cleaned structures once (they're the same regardless of format)
+                if fmt == formats_to_save[0]:
+                    all_cleaned.extend(cleaned)
+        
+        # Deduplicate providers
+        all_providers = list(dict.fromkeys(all_providers))
     except Exception as e:
         logging.error(f"[bandgap] 保存结构时出错: {e}")
         return {

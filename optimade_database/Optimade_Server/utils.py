@@ -28,8 +28,8 @@ DEFAULT_PROVIDERS = {
     "cod",
     # "httk",
     # "jarvis",
-    "mcloud",
-    "mcloudarchive",
+    # "mcloud",      ？？？？？？
+    # "mcloudarchive",    ？？？？？？？
     "mp",
     "mpdd",
     "mpds",
@@ -60,7 +60,7 @@ DEFAULT_BG_PROVIDERS = {
     "alexandria",
     "odbx",
     "oqmd",
-    "mcloudarchive",
+    # "mcloudarchive",    ？？？？？？？
     "twodmatpedia",
 }
 
