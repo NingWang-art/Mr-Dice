@@ -193,7 +193,7 @@ async def fetch_structures_with_filter(
         "output_dir": out_folder,
         "cleaned_structures": all_cleaned,
         "n_found": n_found,
-        "code": 1 if n_found == 0 else 0,
+        "code": -9999 if n_found == 0 else 0,
         "message": "Success",
     }
 
@@ -349,7 +349,7 @@ async def fetch_structures_with_spg(
         "output_dir": out_folder,
         "cleaned_structures": all_cleaned,
         "n_found": n_found,
-        "code": 1 if n_found == 0 else 0,
+        "code": -9999 if n_found == 0 else 0,
         "message": "Success",
     }
 
@@ -507,7 +507,7 @@ async def fetch_structures_with_bandgap(
         "output_dir": out_folder,
         "cleaned_structures": all_cleaned,
         "n_found": n_found,
-        "code": 1 if n_found == 0 else 0,
+        "code": -9999 if n_found == 0 else 0,
         "message": "Success",
     }
 
