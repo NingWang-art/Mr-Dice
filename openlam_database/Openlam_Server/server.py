@@ -116,6 +116,10 @@ async def fetch_openlam_structures(
         output_formats=["json", "cif"]
     )
     """
+    # Normalize formula (convert subscript/superscript to normal numbers)
+    if formula:
+        formula = normalize_formula(formula)
+    
     try:
         data = await to_thread.run_sync(lambda: CrystalStructure.query_by_offset(
             formula=formula,

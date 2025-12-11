@@ -109,6 +109,10 @@ async def fetch_bohrium_crystals(
         - code: 0 for success, -1 for error.
         - message: Error message if code is -1.
     """
+    # === Step 0: Normalize formula (convert subscript/superscript to normal numbers) ===
+    if formula:
+        formula = normalize_formula(formula)
+    
     # === Step 1: Build filters ===
     filters = {}
     if elements:

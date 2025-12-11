@@ -125,8 +125,39 @@ DROP_ATTRS = {
 }
 
 # === UTILS ===
+# Pre-built translation table for formula normalization (created once at module load)
+_FORMULA_TRANSLATION_TABLE = str.maketrans({
+    # Subscript numbers: ₀₁₂₃₄₅₆₇₈₉ (U+2080-U+2089)
+    '₀': '0', '₁': '1', '₂': '2', '₃': '3', '₄': '4',
+    '₅': '5', '₆': '6', '₇': '7', '₈': '8', '₉': '9',
+    # Superscript numbers: ⁰¹²³⁴⁵⁶⁷⁸⁹
+    '⁰': '0', '¹': '1', '²': '2', '³': '3', '⁴': '4',
+    '⁵': '5', '⁶': '6', '⁷': '7', '⁸': '8', '⁹': '9',
+    # Full-width numbers: ０１２３４５６７８９ (U+FF10-U+FF19)
+    '０': '0', '１': '1', '２': '2', '３': '3', '４': '4',
+    '５': '5', '６': '6', '７': '7', '８': '8', '９': '9',
+})
+
+def normalize_formula(formula: str) -> str:
+    """
+    Convert subscript/superscript numbers in chemical formula to normal numbers.
+    
+    Uses efficient str.translate() for better performance. Supports:
+    - Subscript numbers (₀₁₂₃...) → normal numbers (0123...)
+    - Superscript numbers (⁰¹²³...) → normal numbers (0123...)
+    - Full-width numbers (０１２３...) → normal numbers (0123...)
+    
+    Examples:
+        SrTiO₃ → SrTiO3
+        H₂O → H2O
+        Fe₂O₃ → Fe2O3
+    """
+    return formula.translate(_FORMULA_TRANSLATION_TABLE)
+
 def hill_formula_filter(formula: str) -> str:
-    hill_formula = Composition(formula).hill_formula.replace(' ', '')
+    # Normalize formula first (convert subscript/superscript to normal numbers)
+    normalized = normalize_formula(formula)
+    hill_formula = Composition(normalized).hill_formula.replace(' ', '')
     return f'chemical_formula_reduced="{hill_formula}"'
 
 # regex for chemical_formula_reduced="..."/'...'
