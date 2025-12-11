@@ -197,7 +197,7 @@ async def fetch_mofs_sql(
         "output_dir": output_dir,
         "n_found": n_found,
         "cleaned_structures": cleaned,
-        "code": 1 if n_found == 0 else 0,
+        "code": -9999 if n_found == 0 else 0,
         "message": "Success",
     }
 

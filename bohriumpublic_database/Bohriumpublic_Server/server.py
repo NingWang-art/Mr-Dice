@@ -124,7 +124,18 @@ async def fetch_bohrium_crystals(
     if predicted_formation_energy_range:
         filters["predicted_formation_energy_range"] = predicted_formation_energy_range
     if band_gap_range:
-        filters["band_gap_range"] = band_gap_range
+        # Auto-complete missing end: if one end is missing, fill with 0 (min) or 100 (max)
+        processed_band_gap_range = band_gap_range.copy() if isinstance(band_gap_range, list) else []
+        if len(processed_band_gap_range) == 1:
+            # Only one value provided, assume it's min, set max to 100
+            processed_band_gap_range.append("100")
+        elif len(processed_band_gap_range) == 2:
+            # Two values provided, check if either is missing
+            if not processed_band_gap_range[0] or processed_band_gap_range[0] == "":
+                processed_band_gap_range[0] = "0"
+            if not processed_band_gap_range[1] or processed_band_gap_range[1] == "":
+                processed_band_gap_range[1] = "100"
+        filters["band_gap_range"] = processed_band_gap_range
 
     # Default sort: lowest formation energy first (most stable materials)
     sort_filed_info = {"sort_filed": "crystal_ext.predicted_formation_energy", "sort_type": 1}
@@ -205,7 +216,7 @@ async def fetch_bohrium_crystals(
         "output_dir": output_dir,
         "n_found": n_found,
         "cleaned_structures": cleaned,
-        "code": 1 if n_found == 0 else 0,
+        "code": -9999 if n_found == 0 else 0,
         "message": "Success",
     }
 
