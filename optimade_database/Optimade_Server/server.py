@@ -100,7 +100,7 @@ async def fetch_structures_with_filter(
         return {"output_dir": Path(), "cleaned_structures": [], "n_found": 0, "code": -1, "message": "Empty filter string"}
     filt = normalize_cfr_in_filter(filt)
 
-    used = set(providers) if providers else DEFAULT_PROVIDERS
+    used = set(providers) if providers and len(providers) > 0 else DEFAULT_PROVIDERS
     logging.info(f"[raw] providers={sorted(list(used))} filter={filt!r}")
 
     async def _query_one(provider: str) -> dict:
@@ -239,7 +239,7 @@ async def fetch_structures_with_spg(
     """
     base = (base_filter or "").strip()
     base = normalize_cfr_in_filter(base)
-    used = set(providers) if providers else DEFAULT_SPG_PROVIDERS
+    used = set(providers) if providers and len(providers) > 0 else DEFAULT_SPG_PROVIDERS
 
     # Build provider-specific SPG clauses and combine with base filter
     spg_map = get_spg_filter_map(spg_number, used)
@@ -396,7 +396,7 @@ async def fetch_structures_with_bandgap(
     """
     base = (base_filter or "").strip()
     base = normalize_cfr_in_filter(base)
-    used = set(providers) if providers else DEFAULT_BG_PROVIDERS
+    used = set(providers) if providers and len(providers) > 0 else DEFAULT_BG_PROVIDERS
 
     # Build per-provider bandgap clause and combine with base
     bg_map = get_bandgap_filter_map(min_bg, max_bg, used)
